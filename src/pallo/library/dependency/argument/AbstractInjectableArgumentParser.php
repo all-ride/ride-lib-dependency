@@ -1,0 +1,69 @@
+<?php
+
+namespace pallo\library\dependency\argument;
+
+use pallo\library\dependency\DependencyCallArgument;
+use pallo\library\dependency\DependencyInjector;
+
+/**
+ * Parser for defined dependency values.
+ */
+abstract class AbstractInjectableArgumentParser implements InjectableArgumentParser {
+
+    /**
+     * Name of the property for the interface of the dependency
+     * @var string
+     */
+    const PROPERTY_INTERFACE = 'interface';
+
+    /**
+     * Name of the property for the id of the dependency
+     * @var string
+     */
+    const PROPERTY_ID = 'id';
+
+	/**
+	 * Instance of the dependency injector
+	 * @var pallo\library\dependency\DependencyInjector
+	 */
+	protected $di;
+
+	/**
+	 * Exclusion list for the dependency injector
+	 * @var array
+	 */
+	protected $exclude;
+
+	/**
+	 * Sets the dependency injector to this parser
+	 * @param pallo\library\dependency\DependencyInjector $di
+	 * @return null
+	 */
+	public function setDependencyInjector(DependencyInjector $dependencyInjector) {
+		$this->dependencyInjector = $dependencyInjector;
+	}
+
+	/**
+	 * Sets the exclude array of the dependency injector
+	 * @param array $exclude
+	 * @return null
+	 */
+	public function setExclude(array $exclude = null) {
+		$this->exclude = $exclude;
+	}
+
+	/**
+	 * Gets the dependency
+	 * @param string $interface Name of the interface
+	 * @param string|null $id The id of the instance
+	 * @return mixed
+	 */
+	protected function getDependency($interface, $id) {
+        if ($id) {
+	        return $this->dependencyInjector->get($interface, $id);
+        }
+
+        return $this->dependencyInjector->get($interface, null, null, $this->exclude);
+	}
+
+}
