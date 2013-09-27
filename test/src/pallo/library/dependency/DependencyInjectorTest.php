@@ -2,6 +2,7 @@
 
 namespace pallo\library\dependency;
 
+use pallo\library\reflection\ObjectFactory;
 use pallo\library\reflection\ReflectionHelper;
 
 use \PHPUnit_Framework_TestCase;
@@ -12,6 +13,10 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
 
     public function setUp() {
         $this->di = new DependencyInjector();
+    }
+
+    public function testGetObjectFactory() {
+    	$this->assertTrue($this->di->getObjectFactory() instanceof ObjectFactory);
     }
 
     public function testSetAndGetArgumentParser() {
@@ -389,6 +394,21 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
         $this->assertNotEquals($methodToken, $result2->getToken());
     }
 
+    public function testGetAttemptsToCreateUndefinedClasses() {
+        $result = $this->di->get('pallo\\library\\dependency\\TestObject2');
+
+        $this->assertNotNull($result);
+        $this->assertTrue($result instanceof TestObject2);
+        $this->assertTrue($result->getObject() instanceof TestObject);
+    }
+
+    /**
+     * @expectedException pallo\library\dependency\exception\DependencyException
+     */
+    public function testGetAttemptsToCreateUndefinedInterfaceThrowsException() {
+        $this->di->get('pallo\\library\\dependency\\TestInterface');
+    }
+
     /**
      * @expectedException pallo\library\dependency\exception\DependencyException
      */
@@ -407,7 +427,7 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
      * @expectedException pallo\library\dependency\exception\DependencyNotFoundException
      */
     public function testGetThrowsExceptionWhenDependencyNotFound() {
-    	$this->di->get('test');
+    	$result = $this->di->get('test');
     }
 
     /**
@@ -472,7 +492,7 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($expected, $result);
     }
 
-    public function testParseReflectionArguments() {
+    public function testParseArguments() {
     	$reflectionHelper = new ReflectionHelper();
     	$definedArguments = $reflectionHelper->getArguments(null, 'str_repeat');
 
@@ -486,7 +506,7 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
     		'mult' => 3,
     	);
 
-    	$result = $this->di->parseReflectionArguments($arguments, $definedArguments);
+    	$result = $this->di->parseArguments($arguments, $definedArguments);
 
     	$this->assertEquals($expected, $result);
     }
@@ -495,7 +515,7 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
     /**
      * @expectedException pallo\library\dependency\exception\DependencyException
      */
-    public function testParseReflectionArgumentsThrowsExceptionWhenRequiredParameterNotProvided() {
+    public function testParseArgumentsThrowsExceptionWhenRequiredParameterNotProvided() {
     	$reflectionHelper = new ReflectionHelper();
     	$definedArguments = $reflectionHelper->getArguments(null, 'str_repeat');
 
@@ -503,33 +523,35 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
     		'input' => 'test'
     	);
 
-    	$this->di->parseReflectionArguments($arguments, $definedArguments);
+    	$this->di->parseArguments($arguments, $definedArguments);
     }
 
     /**
      * @expectedException pallo\library\dependency\exception\DependencyException
      */
-    public function testParseReflectionArgumentsThrowsExceptionWhenInvalidArgumentProvided() {
+    public function testParseArgumentsThrowsExceptionWhenInvalidArgumentProvided() {
     	$arguments = array(
     		'test' => 'test',
     	);
 
-    	$this->di->parseReflectionArguments($arguments, array());
+    	$this->di->parseArguments($arguments, array());
     }
 
     /**
      * @expectedException pallo\library\dependency\exception\DependencyException
      */
-    public function testParseReflectionArgumentsThrowsExceptionWhenInvalidArgumentsProvided() {
+    public function testParseArgumentsThrowsExceptionWhenInvalidArgumentsProvided() {
     	$arguments = array(
     		'test' => 'test',
     		'test2' => 'test',
     	);
 
-    	$this->di->parseReflectionArguments($arguments, array());
+    	$this->di->parseArguments($arguments, array());
     }
 
-    public function testGetCallbackArguments() {
+    public function testParseArgumentsWithDependency() {
+    	$defined = array('test' => null, 'test2' => 2);
+
     	$arguments = array(
     		'test' => 'TEST',
     		'test2' => new DependencyCallArgument('test2', 'null'),
@@ -540,7 +562,29 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
     		'test2' => null,
     	);
 
-    	$result = $this->di->getCallbackArguments($arguments);
+    	$result = $this->di->parseArguments($arguments, $defined);
+
+    	$this->assertEquals($result, $expected);
+    }
+
+    public function testParseDynamicArguments() {
+    	$defined = array('test' => null, 'test2' => 2);
+
+    	$arguments = array(
+    		'test' => 'TEST',
+    		'test3' => 'test3',
+    		'test2' => new DependencyCallArgument('test2', 'null'),
+    		'test4' => 'test4',
+    	);
+
+    	$expected = array(
+    		'test' => 'TEST',
+    		'test2' => null,
+    		0 => 'test3',
+    		1 => 'test4',
+    	);
+
+    	$result = $this->di->parseArguments($arguments, $defined, null, true);
 
     	$this->assertEquals($result, $expected);
     }
@@ -548,12 +592,12 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
     /**
      * @expectedException pallo\library\dependency\exception\DependencyException
      */
-    public function testGetCallbackArgumentsThrowsExceptionWhenInvalidArgumentTypeProvided() {
+    public function testParseArgumentsThrowsExceptionWhenInvalidArgumentTypeProvided() {
     	$arguments = array(
     		'test' => new DependencyCallArgument('test', 'unexistantType'),
     	);
 
-    	$this->di->getCallbackArguments($arguments);
+    	$this->di->parseArguments($arguments, $arguments);
     }
 
 }
@@ -617,5 +661,17 @@ class TestObject implements TestInterface, TestInterface2 {
     public function method2() {
 
     }
+
+}
+
+class TestObject2 {
+
+	public function __construct(TestObject $object) {
+		$this->object = $object;
+	}
+
+	public function getObject() {
+		return $this->object;
+	}
 
 }

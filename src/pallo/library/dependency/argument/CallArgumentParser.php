@@ -69,21 +69,15 @@ class CallArgumentParser extends AbstractInjectableArgumentParser {
 	    }
 
 	    $arguments = $argument->getProperty(self::PROPERTY_ARGUMENTS);
-	    if (!$arguments) {
-			return $callback->invoke();
+	    if ($arguments === null) {
+	    	$arguments = array();
 	    }
 
 	    if (!is_array($arguments)) {
 	        throw new DependencyException('Invalid argument properties, the arguments property should be an array or empty');
 	    }
 
-	    $reflectionHelper = $this->dependencyInjector->getObjectFactory()->getReflectionHelper();
-	    $reflectionArguments = $reflectionHelper->getArguments($callback);
-
-	    $arguments = $this->dependencyInjector->getCallbackArguments($arguments);
-	    $arguments = $this->dependencyInjector->parseReflectionArguments($arguments, $reflectionArguments);
-
-	    return $callback->invokeWithArrayArguments($arguments);
+	    return $this->dependencyInjector->invoke($callback, $arguments);
 	}
 
 }

@@ -11,17 +11,26 @@ use pallo\library\dependency\argument\NullArgumentParser;
 use pallo\library\dependency\argument\ScalarArgumentParser;
 use pallo\library\dependency\exception\DependencyException;
 use pallo\library\dependency\exception\DependencyNotFoundException;
+use pallo\library\reflection\exception\ReflectionException;
 use pallo\library\reflection\Callback;
+use pallo\library\reflection\Invoker;
 use pallo\library\reflection\ObjectFactory;
 
 use \Exception;
+use \ReflectionClass;
 use \ReflectionParameter;
 
 /**
  * Implementation of a dependency injector. Load class instances dynamically
  * from a dependency container when and only when needed.
  */
-class DependencyInjector {
+class DependencyInjector implements Invoker {
+
+	/**
+	 * Id for a undefined class
+	 * @var string
+	 */
+	const ID_UNDEFINED = '#undefined#';
 
 	/**
 	 * Call argument type
@@ -218,6 +227,35 @@ class DependencyInjector {
     }
 
     /**
+     * Removes a set instance
+     * @param string $interface
+     * @param string $id
+     * @return boolean True if the interface was unset, false if no interface
+     * was set
+     */
+    public function unsetInstance($interface, $id = null) {
+    	if ($id) {
+    		if (isset($this->instances[$interface][$id])) {
+    			unset($this->instances[$interface][$id]);
+
+    			if (!$this->instances[$interface]) {
+    				unset($this->instances[$interface]);
+    			}
+
+    			return true;
+    		}
+    	} else {
+    		if (isset($this->instances[$interface])) {
+    			unset($this->instances[$interface]);
+
+    			return true;
+    		}
+    	}
+
+    	return false;
+    }
+
+    /**
      * Gets all the loaded instances
      * @parameter string $interface Fitler result on interface
      * @return array
@@ -281,6 +319,7 @@ class DependencyInjector {
         $container = $this->getContainer();
         $dependencies = $container->getDependencies($interface);
 
+        $instance = null;
         $dependency = null;
 
         if ($id !== null) {
@@ -325,7 +364,23 @@ class DependencyInjector {
             do {
                 $dependency = array_pop($dependencies);
                 if (!$dependency) {
-                    throw new DependencyNotFoundException('Could not get dependency for ' . $interface . ': no injectable dependency available');
+                	$exception = null;
+
+                	if (!isset($exclude[$interface][self::ID_UNDEFINED])) {
+                		try {
+                			$instance = $this->createUndefined($interface, $arguments, $exclude);
+                		} catch (Exception $e) {
+                			$exception = $e;
+                		}
+                	}
+
+                	if (!$instance) {
+                    	throw new DependencyNotFoundException('Could not get dependency for ' . $interface . ': no injectable dependency available', 0, $exception);
+                	}
+
+                	$id = self::ID_UNDEFINED;
+
+                	break;
                 }
 
                 $id = $dependency->getId();
@@ -333,10 +388,12 @@ class DependencyInjector {
         }
 
         // creates a new instance
-        try {
-            $instance = $this->create($interface, $dependency, $arguments, $exclude);
-        } catch (Exception $exception) {
-            throw new DependencyException('Could not get dependency for interface ' . $interface . ' with id ' . $id . ': instance could not be created', 0, $exception);
+        if (!$instance) {
+	        try {
+	            $instance = $this->create($interface, $dependency, $arguments, $exclude);
+	        } catch (Exception $exception) {
+	            throw new DependencyException('Could not get dependency for interface ' . $interface . ' with id ' . $id . ': instance could not be created', 0, $exception);
+	        }
         }
 
         if ($arguments !== null) {
@@ -344,7 +401,12 @@ class DependencyInjector {
             return $instance;
         }
 
-        $interfaces = $dependency->getInterfaces();
+        if ($dependency) {
+        	$interfaces = $dependency->getInterfaces();
+        } else {
+        	$interfaces = array();
+        }
+
         $interfaces[$interface] = true;
 
         foreach ($interfaces as $interface => $null) {
@@ -370,20 +432,7 @@ class DependencyInjector {
      * @throws Exception when the dependency could not be created
      */
     protected function create($interface, Dependency $dependency, array $arguments = null, array $exclude = null) {
-        if (!$exclude) {
-            $exclude = array($interface => array($dependency->getId() => true));
-        } elseif (!isset($exclude[$interface])) {
-            $exclude[$interface] = array($dependency->getId() => true);
-        } else {
-            $exclude[$interface][$dependency->getId()] = true;
-        }
-
-        foreach ($this->argumentParsers as $argumentParser) {
-            if ($argumentParser instanceof InjectableArgumentParser) {
-                $argumentParser->setDependencyInjector($this);
-                $argumentParser->setExclude($exclude);
-            }
-        }
+    	$this->addExclude($interface, $dependency->getId(), $exclude);
 
         $className = $dependency->getClassName();
 
@@ -391,36 +440,103 @@ class DependencyInjector {
         $reflectionArguments = $reflectionHelper->getArguments($className);
 
         $constructorArguments = $dependency->getConstructorArguments();
-        $constructorArguments = $this->getCallbackArguments($constructorArguments, $exclude);
-        $constructorArguments = $this->parseReflectionArguments($constructorArguments, $reflectionArguments);
+        if ($constructorArguments === null) {
+        	$constructorArguments = array();
+        }
+
         if ($arguments !== null) {
-            $arguments = $this->parseReflectionArguments($arguments, $constructorArguments);
-            $invokeCalls = false;
+	        foreach ($arguments as $name => $value) {
+	        	$constructorArguments[$name] = $value;
+	        }
+
+	        $invokeCalls = false;
         } else {
-            $arguments = $constructorArguments;
             $invokeCalls = true;
         }
 
-        $instance = $this->objectFactory->createObject($className, $interface, !$arguments ? null : $arguments);
+        $arguments = $this->parseArguments($constructorArguments, $reflectionArguments, $exclude);
 
-        if (!$invokeCalls) {
-            return $instance;
-        }
+        $instance = $this->objectFactory->createObject($className, $interface, $arguments);
 
-        $calls = $dependency->getCalls();
-        if ($calls) {
-            foreach ($calls as $call) {
-                $callback = new Callback(array($instance, $call->getMethodName()));
-                $callbackArguments = $reflectionHelper->getArguments($callback);
-
-                $arguments = $this->getCallbackArguments($call->getArguments());
-                $arguments = $this->parseReflectionArguments($arguments, $callbackArguments);
-
-                $callback->invokeWithArrayArguments($arguments);
-            }
+        if ($invokeCalls) {
+	        $calls = $dependency->getCalls();
+	        if ($calls) {
+	            foreach ($calls as $call) {
+	                $this->invoke(array($instance, $call->getMethodName()), $call->getArguments(), $exclude);
+	            }
+	        }
         }
 
         return $instance;
+    }
+
+    /**
+     * Attempts to create a undefined dependency
+     * @param string $className
+     * @param array $arguments
+     * @param array $exclude
+     * @return null|mixed Instance if succeeded, null otherwise
+     */
+    protected function createUndefined($className, array $arguments = null, array $exclude = null) {
+    	$this->addExclude($className, self::ID_UNDEFINED, $exclude);
+
+ 		$reflectionClass = new ReflectionClass($className);
+    	if ($reflectionClass->isInterface()) {
+    		return null;
+    	}
+
+    	$reflectionHelper = $this->objectFactory->getReflectionHelper();
+	    $reflectionArguments = $reflectionHelper->getArguments($className);
+
+	    if ($arguments === null) {
+	    	$arguments = array();
+	    }
+
+	    $arguments = $this->parseArguments($arguments, $reflectionArguments, $exclude);
+
+	    return $this->objectFactory->createObject($className, null, !$arguments ? null : $arguments);
+    }
+
+    /**
+     * Invokes the provided callback
+     * @param mixed $callback Callback to invoke
+     * @param array|null $arguments Arguments for the callback
+     * @param boolean $isDynamic Set to true if the callback has arguments
+     * which are not in the signature
+     * @return mixed Return value of the callback
+     */
+    public function invoke($callback, array $arguments = null, $isDynamic = false) {
+    	return $this->invokeCallback($callback, $arguments, null, $isDynamic);
+    }
+
+    /**
+     * Invokes the provided callback in the dependency container
+     * @param mixed $callback Callback to invoke
+     * @param array|null $arguments Arguments for the callback
+     * @param boolean $isDynamic Set to true if the callback has arguments
+     * which are not in the signature
+     * @return mixed Return value of the callback
+     */
+    protected function invokeCallback($callback, array $arguments = null, array $exclude = null, $isDynamic = false) {
+    	$callback = new Callback($callback);
+    	if (!$callback->isCallable()) {
+    		throw new ReflectionException('Could not invoke ' . $callback . ': callback not callable');
+    	}
+
+    	if ($arguments === null) {
+    		$arguments = array();
+    	}
+
+    	$reflectionHelper = $this->objectFactory->getReflectionHelper();
+    	$callbackArguments = $reflectionHelper->getArguments($callback);
+
+    	try {
+    		$arguments = $this->parseArguments($arguments, $callbackArguments, $exclude, $isDynamic);
+    	} catch (DependencyException $exception) {
+    		throw new ReflectionException('Could not invoke ' . ($isDynamic ? 'dynamic ' : '') . $callback . ': could not parse arguments', 0, $exception);
+    	}
+
+    	return $callback->invokeWithArrayArguments($arguments);
     }
 
     /**
@@ -429,69 +545,106 @@ class DependencyInjector {
      * @param array $definedArguments Argument definition
      * @return array Argument array ready for invokation
      */
-    public function parseReflectionArguments(array $arguments, array $definedArguments) {
-        foreach ($definedArguments as $argumentName => $argument) {
-            if (isset($arguments[$argumentName]) || array_key_exists($argumentName, $arguments) !== false) {
-                $definedArguments[$argumentName] = $arguments[$argumentName];
-                unset($arguments[$argumentName]);
+    public function parseArguments(array $arguments, array $definedArguments, array $exclude = null, $isDynamic = false) {
+        foreach ($definedArguments as $name => $argument) {
+            if (isset($arguments[$name]) || array_key_exists($name, $arguments) !== false) {
+            	$argument = $arguments[$name];
+
+            	if ($argument instanceof DependencyCallArgument) {
+            		$type = $argument->getType();
+            		if (!isset($this->argumentParsers[$type])) {
+            			throw new DependencyException('No argument parser set for type ' . $type);
+            		}
+
+            		$definedArguments[$name] = $this->argumentParsers[$type]->getValue($argument);
+            	} elseif ($argument instanceof ReflectionParameter) {
+					$definedArguments[$name] = $this->parseReflectionParameter($argument, $exclude);
+            	} else {
+	                $definedArguments[$name] = $argument;
+            	}
+
+                unset($arguments[$name]);
             } elseif ($argument instanceof ReflectionParameter) {
-            	if (!$argument->isOptional()) {
-		            throw new DependencyException('Mandatory parameter ' . $argumentName . ' is not provided');
-				} else {
-					$definedArguments[$argumentName] = $argument->getDefaultValue();
-	            }
+				$definedArguments[$name] = $this->parseReflectionParameter($argument, $exclude);
             }
         }
 
         if ($arguments) {
-            // more arguments provided then defined, throw exception
-            $argumentNames = array();
-            $argumentCount = 0;
-            foreach ($arguments as $name => $value) {
-                $argumentNames[] = $name;
-                $argumentCount++;
-            }
+        	if ($isDynamic) {
+        		foreach ($arguments as $value) {
+        			$definedArguments[] = $value;
+        		}
+        	} else {
+	            // more arguments provided then defined, throw exception
+	            $argumentNames = array();
+	            $argumentCount = 0;
+	            foreach ($arguments as $name => $value) {
+	                $argumentNames[] = $name;
+	                $argumentCount++;
+	            }
 
-            $message = implode(', ', $argumentNames);
-            if ($argumentCount == 1) {
-                $message .= ' is';
-            } else {
-                $message .= ' are';
-            }
+	            $message = implode(', ', $argumentNames);
+	            if ($argumentCount == 1) {
+	                $message .= ' is';
+	            } else {
+	                $message .= ' are';
+	            }
 
-            throw new DependencyException($message . ' not defined in the method signature');
+	            throw new DependencyException($message . ' not defined in the method signature');
+        	}
         }
 
         return $definedArguments;
     }
 
     /**
-     * Gets the actual values of the provided arguments
-     * @param array $arguments Array of dependency call arguments
-     * @return array Array with the values of the call arguments
-     * @see DependencyCallArgument
+     * Parses a PHP reflection parameter argument
+     * @param ReflectionParameter $argument
+     * @param array $exclude
+     * @return mixed Value for the argument
+     * @throws DependencyException when the value could not be retrieved
      */
-    public function getCallbackArguments(array $arguments = null) {
-        $callArguments = array();
+    protected function parseReflectionParameter(ReflectionParameter $argument, array $exclude = null) {
+    	if ($argument->isOptional()) {
+    		return $argument->getDefaultValue();
+    	}
 
-        if ($arguments === null) {
-            return $callArguments;
-        }
+    	$exception = null;
 
-        foreach ($arguments as $name => $argument) {
-        	if ($argument instanceof DependencyCallArgument) {
-	        	$type = $argument->getType();
-	        	if (!isset($this->argumentParsers[$type])) {
-	        		throw new DependencyException('No argument parser set for type ' . $type);
-	        	}
+    	$argumentClass = $argument->getClass();
+		if ($argumentClass) {
+			try {
+				return $this->get($argumentClass->getName(), null, null, $exclude);
+			} catch (DependencyException $e) {
+				$exception = $e;
+			}
+		}
 
-	        	$callArguments[$name] = $this->argumentParsers[$type]->getValue($argument);
-        	} else {
-        		$callArguments[$name] = $argument;
-        	}
-        }
+		throw new DependencyException('Mandatory parameter ' . $argument->getName() . ' is not provided and could not be injected', 0, $exception);
+    }
 
-        return $callArguments;
+    /**
+     * Adds a id to the exclude array
+     * @param array $exclude Exclude list
+     * @param string $interface Interface of the id
+     * @param string $id Id to add
+     * @return null
+     */
+    protected function addExclude($interface, $id, array &$exclude = null) {
+    	if (!$exclude) {
+    		$exclude = array($interface => array($id => true));
+    	} elseif (!isset($exclude[$interface])) {
+    		$exclude[$interface] = array($id => true);
+    	} else {
+    		$exclude[$interface][$id] = true;
+    	}
+
+    	foreach ($this->argumentParsers as $argumentParser) {
+    		if ($argumentParser instanceof InjectableArgumentParser) {
+    			$argumentParser->setDependencyInjector($this);
+    			$argumentParser->setExclude($exclude);
+    		}
+    	}
     }
 
 }
