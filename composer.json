@@ -2,7 +2,7 @@
     "name": "pallo/lib-dependency",
     "description": "Dependency injection library of the Pallo framework",
     "license": "MIT",
-    "version": "0.2.1",
+    "version": "0.3.0",
     "authors": [
         {
             "name": "Joris Vandeweerd",
