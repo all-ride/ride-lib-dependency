@@ -91,7 +91,7 @@ class DependencyCallArgument {
         }
 
         $this->type = $type;
-		$this->properties = $properties;
+        $this->properties = $properties;
     }
 
     /**

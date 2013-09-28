@@ -22,14 +22,14 @@ class DependencyCallTest extends PHPUnit_Framework_TestCase {
      * @expectedException pallo\library\dependency\exception\DependencyException
      */
     public function testConstructThrowsExceptionWithInvalidMethodNameProvided() {
-    	new DependencyCall($this);
+        new DependencyCall($this);
     }
 
     /**
      * @expectedException pallo\library\dependency\exception\DependencyException
      */
     public function testConstructThrowsExceptionWithInvalidIdProvided() {
-    	new DependencyCall('strlen', $this);
+        new DependencyCall('strlen', $this);
     }
 
     public function testArguments() {

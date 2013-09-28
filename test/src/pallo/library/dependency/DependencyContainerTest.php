@@ -67,18 +67,18 @@ class DependencyContainerTest extends PHPUnit_Framework_TestCase {
      * @expectedException pallo\library\dependency\exception\DependencyException
      */
     public function testAddDependencyWithoutInterfacesThrowsException() {
-    	$dependency = new Dependency('className');
+        $dependency = new Dependency('className');
 
-    	$container = new DependencyContainer();
-    	$container->addDependency($dependency);
+        $container = new DependencyContainer();
+        $container->addDependency($dependency);
     }
 
     /**
      * @expectedException pallo\library\dependency\exception\DependencyException
      */
     public function testGetDependenciesWithInvalidInterfaceThrowsException() {
-    	$container = new DependencyContainer();
-		$container->getDependencies($this);
+        $container = new DependencyContainer();
+        $container->getDependencies($this);
     }
 
 }
