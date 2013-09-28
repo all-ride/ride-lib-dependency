@@ -15,13 +15,13 @@ class ScalarArgumentParser implements ArgumentParser {
      */
     const PROPERTY_VALUE = 'value';
 
-	/**
-	 * Gets the actual value of the argument
-	 * @param pallo\library\dependency\DependencyCallArgument $argument The argument definition
-	 * @return mixed The value
-	 */
-	public function getValue(DependencyCallArgument $argument) {
-		return $argument->getProperty(self::PROPERTY_VALUE);
-	}
+    /**
+     * Gets the actual value of the argument
+     * @param pallo\library\dependency\DependencyCallArgument $argument The argument definition
+     * @return mixed The value
+     */
+    public function getValue(DependencyCallArgument $argument) {
+        return $argument->getProperty(self::PROPERTY_VALUE);
+    }
 
 }

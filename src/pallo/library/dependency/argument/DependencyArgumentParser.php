@@ -9,16 +9,16 @@ use pallo\library\dependency\DependencyCallArgument;
  */
 class DependencyArgumentParser extends AbstractInjectableArgumentParser {
 
-	/**
-	 * Gets the actual value of the argument
-	 * @param pallo\library\dependency\DependencyCallArgument $argument
-	 * @return mixed The value
-	 */
-	public function getValue(DependencyCallArgument $argument) {
-	    $interface = $argument->getProperty(self::PROPERTY_INTERFACE);
-	    $id = $argument->getProperty(self::PROPERTY_ID);
+    /**
+     * Gets the actual value of the argument
+     * @param pallo\library\dependency\DependencyCallArgument $argument
+     * @return mixed The value
+     */
+    public function getValue(DependencyCallArgument $argument) {
+        $interface = $argument->getProperty(self::PROPERTY_INTERFACE);
+        $id = $argument->getProperty(self::PROPERTY_ID);
 
         return $this->getDependency($interface, $id);
-	}
+    }
 
 }

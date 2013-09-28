@@ -67,7 +67,7 @@ class DependencyContainer {
         }
 
         if (!is_string($interface) || !$interface) {
-        	throw new DependencyException('Provided interface name is invalid');
+            throw new DependencyException('Provided interface name is invalid');
         }
 
         if (isset($this->dependencies[$interface])) {

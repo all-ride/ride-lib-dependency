@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "pallo/lib-reflection": ">=0.2.0"
+        "pallo/lib-reflection": ">=0.3.0"
     }, 
     "autoload": {
         "psr-0": {
