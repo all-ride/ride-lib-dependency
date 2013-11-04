@@ -45,7 +45,7 @@ class DependencyCall {
      */
     public function setMethodName($methodName) {
         if (!is_string($methodName) || !$methodName) {
-            throw new DependencyException('Provided method name is empty or invalid');
+            throw new DependencyException('Could not set the method of the dependency call: provided method name is empty or invalid');
         }
 
         $this->methodName = $methodName;
@@ -66,7 +66,7 @@ class DependencyCall {
      */
     public function setId($id = null) {
         if ($id !== null && (!is_string($id) || $id == '')) {
-            throw new DependencyException('Provided id is empty or invalid');
+            throw new DependencyException('Could not set the id of ' . $this->methodName . ': provided id is empty or invalid');
         }
 
         $this->id = $id;

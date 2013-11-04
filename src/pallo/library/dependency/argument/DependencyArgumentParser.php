@@ -18,6 +18,10 @@ class DependencyArgumentParser extends AbstractInjectableArgumentParser {
         $interface = $argument->getProperty(self::PROPERTY_INTERFACE);
         $id = $argument->getProperty(self::PROPERTY_ID);
 
+        if (!$interface) {
+            throw new DependencyException('Invalid argument properties, please define a interface');
+        }
+
         return $this->getDependency($interface, $id);
     }
 

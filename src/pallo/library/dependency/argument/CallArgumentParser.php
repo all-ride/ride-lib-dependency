@@ -61,9 +61,9 @@ class CallArgumentParser extends AbstractInjectableArgumentParser {
                 throw new DependencyException('Invalid argument properties, please define a method for your class or dependency');
             }
 
-            $callback = new Callback(array($object, $method));
+            $callback = array($object, $method);
         } elseif ($function) {
-            $callback = new Callback($function);
+            $callback = $function;
         } else {
             throw new DependencyException('Invalid argument properties, please define the interface, class or function property');
         }
