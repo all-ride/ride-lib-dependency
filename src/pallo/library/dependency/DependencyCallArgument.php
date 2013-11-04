@@ -64,7 +64,7 @@ class DependencyCallArgument {
      */
     public function setName($name) {
         if (!is_string($name) || !$name) {
-            throw new DependencyException('Provided name is invalid or empty');
+            throw new DependencyException('Could not set the name of the argument: provided name is invalid or empty');
         }
 
         $this->name = $name;
@@ -87,7 +87,7 @@ class DependencyCallArgument {
      */
     public function setValue($type, array $properties) {
         if (!is_string($type) || !$type) {
-            throw new DependencyException('Invalid argument type provided');
+            throw new DependencyException('Could not set the value of the argument: invalid type provided');
         }
 
         $this->type = $type;

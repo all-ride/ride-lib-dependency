@@ -22,6 +22,12 @@ class Dependency {
     protected $id;
 
     /**
+     * Interfaces to implement
+     * @var array
+     */
+    protected $interfaces;
+
+    /**
      * Arguments for the constructor
      * @var array
      */
@@ -34,10 +40,10 @@ class Dependency {
     protected $calls;
 
     /**
-     * Interfaces to implement
+     * Tags of this dependency
      * @var array
      */
-    protected $interfaces;
+    protected $tags;
 
     /**
      * Constructs a new dependency
@@ -48,9 +54,10 @@ class Dependency {
         $this->setClassName($className);
         $this->setId($id);
 
+        $this->interfaces = array();
         $this->constructorArguments = null;
         $this->calls = null;
-        $this->interfaces = array();
+        $this->tags = null;
     }
 
     /**
@@ -60,7 +67,7 @@ class Dependency {
      */
     public function setClassName($className) {
         if (!is_string($className) || !$className) {
-            throw new DependencyException('Provided class name is empty or invalid');
+            throw new DependencyException('Could not set the class of the dependency: provided class name is empty or invalid');
         }
 
         $this->className = $className;
@@ -81,7 +88,7 @@ class Dependency {
      */
     public function setId($id = null) {
         if ($id !== null && (!is_string($id) || $id == '')) {
-            throw new DependencyException('Provided id is empty or invalid');
+            throw new DependencyException('Could not set the id of ' . $this->className . ': provided id is empty or invalid');
         }
 
         $this->id = $id;
@@ -155,12 +162,16 @@ class Dependency {
     /**
      * Removes an interface
      * @param string $interface Class name of the interface
-     * @return null
+     * @return boolea,
      */
     public function removeInterface($interface) {
-        if (isset($this->interfaces[$interface])) {
-            unset($this->interfaces[$interface]);
+        if (!isset($this->interfaces[$interface])) {
+            return false;
         }
+
+        unset($this->interfaces[$interface]);
+
+        return true;
     }
 
     /**
@@ -180,6 +191,47 @@ class Dependency {
      */
     public function getInterfaces() {
         return $this->interfaces;
+    }
+
+    /**
+     * Adds an tag
+     * @param string $tag Tag to add
+     * @return null
+     */
+    public function addTag($tag) {
+        $this->tags[$tag] = $tag;
+    }
+
+    /**
+     * Removes an tag
+     * @param string $tag Tag to remove
+     * @return boolean
+     */
+    public function removeTag($tag) {
+        if (!isset($this->tags[$tag])) {
+            return false;
+        }
+
+        unset($this->tags[$tag]);
+
+        return true;
+    }
+
+    /**
+     * Checks whether a tag is added to this dependency
+     * @param string $tag Tag to check
+     * @return boolean
+     */
+    public function hasTag($tag) {
+        return isset($this->tags[$tag]);
+    }
+
+    /**
+     * Gets the tags of this dependency
+     * @return array Array with the tag as key and as value
+     */
+    public function getTags() {
+        return $this->tags;
     }
 
 }

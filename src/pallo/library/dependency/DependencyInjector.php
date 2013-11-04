@@ -301,7 +301,7 @@ class DependencyInjector implements Invoker {
     }
 
     /**
-     * Gets all the defined instances of the provided class
+     * Gets all the defined instances of the provided interface
      * @param string $interface The full class name of the interface or parent
      * class
      * @return array
@@ -316,6 +316,31 @@ class DependencyInjector implements Invoker {
         }
 
         return $interfaceDependencies;
+    }
+
+    /**
+     * Gets all the defined instances of the provided class
+     * @param string $interface The full class name of the interface or parent
+     * class
+     * @return array
+     */
+    public function getByTag($interface = null, $include = null, $exclude = null) {
+        $tagDependencies = array();
+
+        $dependencies = $this->container->getDependenciesByTag($interface, $include, $exclude);
+        foreach ($dependencies as $dependency) {
+            $interfaces = $dependency->getInterfaces();
+            if ($interfaces) {
+                $interfaces = array_keys($interfaces);
+                $interface = array_pop($interfaces);
+            } else {
+                $interface = $dependency->getClassName();
+            }
+
+            $tagDependencies[] = $this->get($interface, $dependency->getId());
+        }
+
+        return $tagDependencies;
     }
 
     /**
