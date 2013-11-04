@@ -179,81 +179,110 @@ class DependencyInjector implements Invoker {
      * Overrides the container by setting an instance which will always be
      * returned by get if the provided object's class name is requested
      * @param object $instance Instance to set
-     * @param string $interface Interface to set the instance for, if not provided
-     * the class name of the instance will be used as interface
+     * @param string|array $interface Interface(s) to set the instance for, if
+     * not provided the class name of the instance will be used as interface
      * @param string $id Id of the instance
      * @return null
-     * @throws Exception if the provided instance is not a object
-     * @throws Exception if the provided interface is empty or invalid
+     * @throws pallo\library\dependency\exception\DependencyException if the
+     * provided instance is not a object
+     * @throws pallo\library\dependency\exception\DependencyException if the
+     * provided interface is empty or invalid
      */
     public function setInstance($instance, $interface = null, $id = null) {
         if (!is_object($instance)) {
             throw new DependencyException('Provided instance is not an object');
         }
 
-        if ($interface !== null) {
+        if ($interface === null) {
+            $interfaces = array(get_class($instance));
+        } elseif (!is_array($interface)) {
+            $interfaces = array($interface);
+        } else {
+            $interfaces = $interface;
+        }
+
+        foreach ($interfaces as $interface) {
             if (!is_string($interface) || !$interface) {
                 throw new DependencyException('Provided interface is empty or invalid');
             }
-        } else {
-            $interface = get_class($instance);
-        }
 
-        if (isset($this->instances[$interface])) {
-            if (is_array($this->instances[$interface])) {
-                if ($id) {
-                    $this->instances[$interface][$id] = $instance;
+            if (isset($this->instances[$interface])) {
+                if (is_array($this->instances[$interface])) {
+                    if ($id) {
+                        $this->instances[$interface][$id] = $instance;
+                    } else {
+                        $this->instances[$interface][0] = $instance;
+                    }
                 } else {
-                    $this->instances[$interface][0] = $instance;
+                    if ($id) {
+                        $this->instances[$interface] = array(
+                            $this->instances[$interface],
+                            $id => $instance,
+                        );
+                    } else {
+                        $this->instances[$interface] = $instance;
+                    }
                 }
             } else {
                 if ($id) {
                     $this->instances[$interface] = array(
-                        $this->instances[$interface],
                         $id => $instance,
                     );
                 } else {
                     $this->instances[$interface] = $instance;
                 }
             }
-        } else {
-            if ($id) {
-                $this->instances[$interface] = array(
-                    $id => $instance,
-                );
-            } else {
-                $this->instances[$interface] = $instance;
-            }
         }
     }
 
     /**
      * Removes a set instance
-     * @param string $interface
+     * @param string|array $interface
      * @param string $id
-     * @return boolean True if the interface was unset, false if no interface
-     * was set
+     * @return boolean|array True if the interface was unset, false if no
+     * interface was set
      */
     public function unsetInstance($interface, $id = null) {
-        if ($id) {
-            if (isset($this->instances[$interface][$id])) {
-                unset($this->instances[$interface][$id]);
-
-                if (!$this->instances[$interface]) {
-                    unset($this->instances[$interface]);
-                }
-
-                return true;
-            }
+        $isArray = is_array($interface);
+        if (!$isArray) {
+            $interfaces = array($interface);
         } else {
-            if (isset($this->instances[$interface])) {
-                unset($this->instances[$interface]);
+            $interfaces = $interface;
+        }
 
-                return true;
+        $result = array();
+
+        foreach ($interfaces as $index => $interface) {
+            if (!is_string($interface) || !$interface) {
+                throw new DependencyException('Provided interface is empty or invalid');
+            }
+
+            $result[$index] = false;
+
+            if ($id) {
+                if (isset($this->instances[$interface][$id])) {
+                    unset($this->instances[$interface][$id]);
+
+                    if (!$this->instances[$interface]) {
+                        unset($this->instances[$interface]);
+                    }
+
+                    $result[$index] = true;
+                }
+            } else {
+                if (isset($this->instances[$interface])) {
+                    unset($this->instances[$interface]);
+
+                    $result[$index] = true;
+                }
             }
         }
 
-        return false;
+        if ($isArray) {
+            return $result;
+        } else {
+            return array_pop($result);
+        }
     }
 
     /**
@@ -491,7 +520,11 @@ class DependencyInjector implements Invoker {
             $arguments = array();
         }
 
-        $arguments = $this->parseArguments($arguments, $reflectionArguments, $exclude);
+        try {
+            $arguments = $this->parseArguments($arguments, $reflectionArguments, $exclude);
+        } catch (DependencyException $e) {
+            throw new DependencyException('Could not create instance of ' . $className . ': arguments could not be parsed', 0, $e);
+        }
 
         return $this->reflectionHelper->createObject($className, !$arguments ? null : $arguments);
     }
