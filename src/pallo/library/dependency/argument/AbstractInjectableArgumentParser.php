@@ -66,4 +66,19 @@ abstract class AbstractInjectableArgumentParser implements InjectableArgumentPar
         return $this->dependencyInjector->get($interface, null, null, $this->exclude);
     }
 
+    /**
+     * Gets dependencies
+     * @param string $interface Name of the interface
+     * @param array $include
+     * @param array $exclude
+     * @return mixed
+     */
+    protected function getDependencies($interface, array $include = null, array $exclude = null) {
+        if (!$include && !$exclude) {
+            return $this->dependencyInjector->getAll($interface);
+        }
+
+        return $this->dependencyInjector->getByTag($interface, $include, $exclude);
+    }
+
 }

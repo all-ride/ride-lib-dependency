@@ -6,6 +6,7 @@ use pallo\library\dependency\argument\ArgumentParser;
 use pallo\library\dependency\argument\ArrayArgumentParser;
 use pallo\library\dependency\argument\CallArgumentParser;
 use pallo\library\dependency\argument\DependencyArgumentParser;
+use pallo\library\dependency\argument\DependenciesArgumentParser;
 use pallo\library\dependency\argument\InjectableArgumentParser;
 use pallo\library\dependency\argument\NullArgumentParser;
 use pallo\library\dependency\argument\ScalarArgumentParser;
@@ -43,6 +44,12 @@ class DependencyInjector implements Invoker {
      * @var string
      */
     const TYPE_DEPENDENCY = 'dependency';
+
+    /**
+     * Dependencies argument type
+     * @var string
+     */
+    const TYPE_DEPENDENCIES = 'dependencies';
 
     /**
      * Null value argument type
@@ -112,6 +119,7 @@ class DependencyInjector implements Invoker {
             self::TYPE_SCALAR => new ScalarArgumentParser(),
             self::TYPE_ARRAY => new ArrayArgumentParser(),
             self::TYPE_DEPENDENCY => new DependencyArgumentParser(),
+            self::TYPE_DEPENDENCIES => new DependenciesArgumentParser(),
             self::TYPE_CALL => new CallArgumentParser(),
         );
 
