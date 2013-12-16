@@ -53,6 +53,15 @@ abstract class AbstractInjectableArgumentParser implements InjectableArgumentPar
     }
 
     /**
+     * Gets the id of the dependency
+     * @param zibo\library\dependency\DependencyCallArgument $argument
+     * @return string|null
+     */
+    protected function getDependencyId(DependencyCallArgument $argument) {
+        return $argument->getProperty(self::PROPERTY_ID);
+    }
+
+    /**
      * Gets the dependency
      * @param string $interface Name of the interface
      * @param string|null $id The id of the instance
