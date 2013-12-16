@@ -68,11 +68,7 @@ abstract class AbstractInjectableArgumentParser implements InjectableArgumentPar
      * @return mixed
      */
     protected function getDependency($interface, $id) {
-        if ($id) {
-            return $this->dependencyInjector->get($interface, $id);
-        }
-
-        return $this->dependencyInjector->get($interface, null, null, $this->exclude);
+        return $this->dependencyInjector->get($interface, $id, null, $this->exclude);
     }
 
     /**
