@@ -2,6 +2,7 @@
 
 namespace pallo\library\dependency\argument;
 
+use pallo\library\dependency\exception\DependencyException;
 use pallo\library\dependency\DependencyCallArgument;
 
 /**
@@ -16,11 +17,11 @@ class DependencyArgumentParser extends AbstractInjectableArgumentParser {
      */
     public function getValue(DependencyCallArgument $argument) {
         $interface = $argument->getProperty(self::PROPERTY_INTERFACE);
-        $id = $argument->getProperty(self::PROPERTY_ID);
-
         if (!$interface) {
             throw new DependencyException('Invalid argument properties, please define a interface');
         }
+
+        $id = $this->getDependencyId($argument);
 
         return $this->getDependency($interface, $id);
     }

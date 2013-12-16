@@ -369,7 +369,7 @@ class DependencyInjector implements Invoker {
      * @throws pallo\library\dependency\exception\DependencyException if the dependency
      * could not be created
      */
-    public function get($interface, $id = null, array $arguments = null, array &$exclude = null) {
+    public function get($interface, $id = null, array $arguments = null, array $exclude = null) {
         if (!is_string($interface) || !$interface) {
             throw new DependencyException('Could not get dependency: provided interface is empty or invalid');
         }
@@ -396,8 +396,8 @@ class DependencyInjector implements Invoker {
                 return $this->instances[$interface][$id];
             }
 
-            if (!isset($dependencies[$id])) {
-                throw new DependencyNotFoundException('Could not get dependency for ' . $interface . ': no injectable dependency set for ' . $interface . ' with id ' . $id);
+            if (isset($exclude[$interface][$id]) || !isset($dependencies[$id])) {
+                throw new DependencyNotFoundException('Could not get dependency for ' . $interface . ': no injectable dependency available with id ' . $id);
             }
 
             $dependency = $dependencies[$id];
@@ -473,11 +473,6 @@ class DependencyInjector implements Invoker {
         $interfaces[$interface] = true;
 
         foreach ($interfaces as $interface => $null) {
-            // remove exclude
-            if (isset($exclude[$interface][$id])) {
-                unset($exclude[$interface][$id]);
-            }
-
             // index this interface
             if (!isset($this->instances[$interface])) {
                 $this->instances[$interface] = array();

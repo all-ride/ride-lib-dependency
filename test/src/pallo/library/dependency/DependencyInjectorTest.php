@@ -269,10 +269,29 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
         $container = new DependencyContainer();
         $container->addDependency($dependency);
 
-        $this->di->setContainer($container);
-        $this->di->get($interface);
+        $exclude = array($interface => array($dependency->getId() => true));
 
-        $this->di->get($interface, null, null, array($interface => array($dependency->getId() => true)));
+        $this->di->setContainer($container);
+        $this->di->get($interface, null, null, $exclude);
+    }
+
+    /**
+     * @expectedException pallo\library\dependency\exception\DependencyException
+     */
+    public function testGetWithIdThrowsExceptionWhenAllInstancesAreExcluded() {
+        // not implemented and unexistant interface
+        $interface = 'pallo\\library\\dependency\\TestInterface';
+
+        $dependency = new Dependency('pallo\\library\\dependency\\TestObject');
+        $dependency->addInterface($interface);
+
+        $container = new DependencyContainer();
+        $container->addDependency($dependency);
+
+        $exclude = array($interface => array($dependency->getId() => true));
+
+        $this->di->setContainer($container);
+        $this->di->get($interface, $dependency->getId(), null, $exclude);
     }
 
     public function testSetInstance() {

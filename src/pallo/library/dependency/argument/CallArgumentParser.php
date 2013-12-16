@@ -49,7 +49,7 @@ class CallArgumentParser extends AbstractInjectableArgumentParser {
 
         if ($interface || $class) {
             if ($interface) {
-                $id = $argument->getProperty(self::PROPERTY_ID);
+                $id = $this->getDependencyId($argument);
 
                 $object = $this->getDependency($interface, $id);
             } elseif ($class) {
