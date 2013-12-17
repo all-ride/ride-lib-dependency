@@ -473,6 +473,11 @@ class DependencyInjector implements Invoker {
         $interfaces[$interface] = true;
 
         foreach ($interfaces as $interface => $null) {
+            // remove exclude
+            if (isset($exclude[$interface][$id])) {
+                unset($exclude[$interface][$id]);
+            }
+
             // index this interface
             if (!isset($this->instances[$interface])) {
                 $this->instances[$interface] = array();
@@ -481,6 +486,17 @@ class DependencyInjector implements Invoker {
             $this->instances[$interface][$id] = $instance;
         }
 
+        // invoke defined calls
+        if ($dependency) {
+            $calls = $dependency->getCalls();
+            if ($calls) {
+                foreach ($calls as $call) {
+                    $this->invoke(array($instance, $call->getMethodName()), $call->getArguments(), $exclude);
+                }
+            }
+        }
+
+        // return instance
         return $instance;
     }
 
@@ -510,26 +526,11 @@ class DependencyInjector implements Invoker {
             foreach ($arguments as $name => $value) {
                 $constructorArguments[$name] = $value;
             }
-
-            $invokeCalls = false;
-        } else {
-            $invokeCalls = true;
         }
 
         $arguments = $this->parseArguments($constructorArguments, $reflectionArguments, $exclude);
 
-        $instance = $this->reflectionHelper->createObject($className, $arguments, $interface);
-
-        if ($invokeCalls) {
-            $calls = $dependency->getCalls();
-            if ($calls) {
-                foreach ($calls as $call) {
-                    $this->invoke(array($instance, $call->getMethodName()), $call->getArguments(), $exclude);
-                }
-            }
-        }
-
-        return $instance;
+        return $this->reflectionHelper->createObject($className, $arguments, $interface);
     }
 
     /**
