@@ -402,38 +402,29 @@ class DependencyInjector implements Invoker {
 
             $dependency = $dependencies[$id];
         } else {
-            if ($arguments === null && isset($this->instances[$interface])) {
-                // already a instance of the interface set
-                $instances = array_reverse($this->instances[$interface]);
-
-                // gets the last created dependency which is not excluded
-                do {
-                    $instance = each($instances);
-                    if (!$instance) {
-                        break;
-                    }
-
-                    $id = $instance[0];
-                    $instance = $instance[1];
-                } while (isset($exclude[$interface][$id]));
-
-                if ($instance) {
-                    // there is a dependency created which is not excluded
-                    return $instance;
-                }
+            if (isset($this->instances[$interface][0])) {
+                // return set instance
+                return $this->instances[$interface][0];
             }
 
             // gets the last defined dependency which is not excluded
             do {
                 $dependency = array_pop($dependencies);
                 if (!$dependency) {
+                    // no dependency found, check for undefined instance
                     $exception = null;
 
                     if (!isset($exclude[$interface][self::ID_UNDEFINED])) {
-                        try {
-                            $instance = $this->createUndefined($interface, $arguments, $exclude);
-                        } catch (Exception $e) {
-                            $exception = $e;
+                        if (isset($this->instances[$interface][self::ID_UNDEFINED])) {
+                            // undefined instance already created
+                            $instance = $this->instances[$interface][self::ID_UNDEFINED];
+                        } else {
+                            // create undefined instance
+                            try {
+                                $instance = $this->createUndefined($interface, $arguments, $exclude);
+                            } catch (Exception $e) {
+                                $exception = $e;
+                            }
                         }
                     }
 
@@ -447,7 +438,12 @@ class DependencyInjector implements Invoker {
                 }
 
                 $id = $dependency->getId();
-            } while (isset($exclude[$interface][$id]));
+            } while ($dependency && isset($exclude[$dependency->getClassName()][$id]));
+
+            if (isset($this->instances[$interface][$id]) && $arguments === null) {
+                // the instance is already created
+                return $this->instances[$interface][$id];
+            }
         }
 
         // creates a new instance
@@ -460,25 +456,19 @@ class DependencyInjector implements Invoker {
         }
 
         if ($arguments !== null) {
-            // arguments provided, act as factory and don't store the instance
+            // arguments provided, act as factory and don't register the instance
             return $instance;
         }
 
+        // register the instance
         if ($dependency) {
             $interfaces = $dependency->getInterfaces();
+            $interfaces[$interface] = true;
         } else {
-            $interfaces = array();
+            $interfaces = array($interface => true);
         }
 
-        $interfaces[$interface] = true;
-
         foreach ($interfaces as $interface => $null) {
-            // remove exclude
-            if (isset($exclude[$interface][$id])) {
-                unset($exclude[$interface][$id]);
-            }
-
-            // index this interface
             if (!isset($this->instances[$interface])) {
                 $this->instances[$interface] = array();
             }
@@ -511,9 +501,9 @@ class DependencyInjector implements Invoker {
      * @throws Exception when the dependency could not be created
      */
     protected function create($interface, Dependency $dependency, array $arguments = null, array $exclude = null) {
-        $this->addExclude($interface, $dependency->getId(), $exclude);
-
         $className = $dependency->getClassName();
+
+        $this->addExclude($className, $dependency->getId(), $exclude);
 
         $reflectionArguments = $this->reflectionHelper->getArguments('__construct', $className);
 
