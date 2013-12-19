@@ -172,6 +172,7 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
 
     public function testGetInjectsDependencies() {
         $interface = 'pallo\\library\\dependency\\TestInterface';
+        $class = 'pallo\\library\\dependency\\TestObject';
 
         $token = 'test';
 
@@ -180,16 +181,13 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
         $method1 = new DependencyCall('setTest');
         $method1->addArgument(new DependencyCallArgument('test', 'dependency', array('interface' => $interface)));
 
-        $dependency1 = new Dependency('pallo\\library\\dependency\\TestObject');
+        $dependency1 = new Dependency($class);
         $dependency1->addInterface($interface);
         $dependency1->addCall($construct);
-        $dependency2 = new Dependency('pallo\\library\\dependency\\TestObject');
-        $dependency2->addInterface($interface);
-        $dependency2->addCall($method1);
+        $dependency1->addCall($method1);
 
         $container = new DependencyContainer();
         $container->addDependency($dependency1);
-        $container->addDependency($dependency2);
 
         $this->di->setContainer($container);
 
