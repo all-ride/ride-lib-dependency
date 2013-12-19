@@ -396,14 +396,14 @@ class DependencyInjector implements Invoker {
                 return $this->instances[$interface][$id];
             }
 
-            if (isset($exclude[$interface][$id]) || !isset($dependencies[$id])) {
+            if (!isset($dependencies[$id]) || isset($exclude[$dependencies[$id]->getClassName()][$id])) {
                 throw new DependencyNotFoundException('Could not get dependency for ' . $interface . ': no injectable dependency available with id ' . $id);
             }
 
             $dependency = $dependencies[$id];
         } else {
             if (isset($this->instances[$interface][0])) {
-                // return set instance
+                // return manually set instance
                 return $this->instances[$interface][0];
             }
 
@@ -481,7 +481,7 @@ class DependencyInjector implements Invoker {
             $calls = $dependency->getCalls();
             if ($calls) {
                 foreach ($calls as $call) {
-                    $this->invoke(array($instance, $call->getMethodName()), $call->getArguments(), $exclude);
+                    $this->invokeCallback(array($instance, $call->getMethodName()), $call->getArguments(), $exclude);
                 }
             }
         }
@@ -574,6 +574,8 @@ class DependencyInjector implements Invoker {
      * @return mixed Return value of the callback
      */
     protected function invokeCallback($callback, array $arguments = null, array $exclude = null, $isDynamic = false) {
+        $this->setExclude($exclude);
+
         $callback = new Callback($callback);
         if (!$callback->isCallable()) {
             throw new ReflectionException('Could not invoke ' . $callback . ': callback not callable');
@@ -692,6 +694,15 @@ class DependencyInjector implements Invoker {
             $exclude[$interface][$id] = true;
         }
 
+        $this->setExclude($exclude);
+    }
+
+    /**
+     * Updates the argument parsers with the provided exclude array
+     * @param array $exclude
+     * @return null
+     */
+    protected function setExclude(array $exclude = null) {
         foreach ($this->argumentParsers as $argumentParser) {
             if ($argumentParser instanceof InjectableArgumentParser) {
                 $argumentParser->setDependencyInjector($this);
