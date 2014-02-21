@@ -1,6 +1,6 @@
-# Pallo: Dependency Injection Library
+# Ride: Dependency Injection Library
 
-Dependency injection library of the PHP Pallo framework.
+Dependency injection library of the PHP Ride framework.
 
 This module can create objects and invoke callbacks with dynamic argument injection.
 
@@ -10,11 +10,11 @@ Check this code sample to see the possibilities of this library:
 
     <?php
     
-    use pallo\library\dependency\Dependency;
-    use pallo\library\dependency\DependencyCall;
-    use pallo\library\dependency\DependencyCallArgument;
-    use pallo\library\dependency\DependencyContainer;
-    use pallo\library\dependency\DependencyInjector;
+    use ride\library\dependency\Dependency;
+    use ride\library\dependency\DependencyCall;
+    use ride\library\dependency\DependencyCallArgument;
+    use ride\library\dependency\DependencyContainer;
+    use ride\library\dependency\DependencyInjector;
 
     // Your dependencies are stored in a dependency container. For the sake of
     // explaining this library, let's initialize it manually. This should be done
