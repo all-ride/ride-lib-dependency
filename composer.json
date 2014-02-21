@@ -1,6 +1,6 @@
 {
-    "name": "pallo/lib-dependency",
-    "description": "Dependency injection library of the Pallo framework",
+    "name": "ride/lib-dependency",
+    "description": "Dependency injection library of the Ride framework",
     "license": "MIT",
     "version": "0.5.5",
     "authors": [
@@ -10,11 +10,11 @@
         }
     ],
     "require": {
-        "pallo/lib-reflection": ">=0.3.0"
+        "ride/lib-reflection": ">=0.3.0"
     }, 
     "autoload": {
         "psr-0": {
-            "pallo\\library\\dependency\\": ["src/", "test/src/"]
+            "ride\\library\\dependency\\": ["src/", "test/src/"]
         }
     }
 }
