@@ -4,7 +4,6 @@ namespace ride\library\dependency\argument;
 
 use ride\library\dependency\exception\DependencyException;
 use ride\library\dependency\DependencyCallArgument;
-use ride\library\reflection\Callback;
 
 /**
  * Parser to get a value through a call.
@@ -37,7 +36,7 @@ class CallArgumentParser extends AbstractInjectableArgumentParser {
 
     /**
      * Gets the actual value of the argument
-     * @param ride\library\dependency\DependencyCallArgument $argument The argument
+     * @param \ride\library\dependency\DependencyCallArgument $argument The argument
      * definition. The extra value of the argument is optional and can be used
      * to define the id of the requested dependency
      * @return mixed The value

@@ -11,7 +11,7 @@ interface InjectableArgumentParser extends ArgumentParser {
 
     /**
      * Sets the dependency injector to this parser
-     * @param ride\library\dependency\DependencyInjector $dependencyInjector
+     * @param \ride\library\dependency\DependencyInjector $dependencyInjector
      * @return null
      */
     public function setDependencyInjector(DependencyInjector $dependencyInjector);
