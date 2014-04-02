@@ -271,7 +271,7 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
         $exclude = array($class => array($dependency->getId() => true));
 
         $this->di->setContainer($container);
-        $this->di->get($interface, null, null, $exclude);
+        $this->di->get($interface, null, null, false, $exclude);
     }
 
     /**
@@ -291,7 +291,7 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
         $exclude = array($class => array($dependency->getId() => true));
 
         $this->di->setContainer($container);
-        $this->di->get($interface, $dependency->getId(), null, $exclude);
+        $this->di->get($interface, $dependency->getId(), null, false, $exclude);
     }
 
     public function testSetInstance() {
@@ -453,6 +453,35 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($result1 !== $result2);
         $this->assertTrue($constructToken == $result2->getToken());
         $this->assertNotEquals($methodToken, $result2->getToken());
+    }
+
+    public function testGetActAsFactoryWithCalls() {
+        $interface = 'ride\\library\\dependency\\TestInterface';
+
+        $token = 'test';
+        $methodToken = 'called';
+        $constructToken = 'construct';
+
+        $construct = new DependencyCall('__construct');
+        $construct->addArgument(new DependencyCallArgument('token', DependencyInjector::TYPE_SCALAR, array('value' => $constructToken)));
+        $method = new DependencyCall('setToken');
+        $method->addArgument(new DependencyCallArgument('token', DependencyInjector::TYPE_SCALAR, array('value' => $methodToken)));
+
+        $dependency = new Dependency('ride\\library\\dependency\\TestObject');
+        $dependency->addInterface($interface);
+        $dependency->addCall($construct);
+        $dependency->addCall($method);
+
+        $container = new DependencyContainer();
+        $container->addDependency($dependency);
+
+        $this->di->setContainer($container, true);
+
+        $result1 = $this->di->get($interface, null, array('token' => $token), true);
+
+        $this->assertNotNull($result1);
+        $this->assertTrue($result1 instanceof $interface);
+        $this->assertEquals($methodToken, $result1->getToken());
     }
 
     public function testGetAttemptsToCreateUndefinedClasses() {

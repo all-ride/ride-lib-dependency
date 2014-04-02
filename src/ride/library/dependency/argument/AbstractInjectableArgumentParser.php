@@ -24,7 +24,7 @@ abstract class AbstractInjectableArgumentParser implements InjectableArgumentPar
 
     /**
      * Instance of the dependency injector
-     * @var ride\library\dependency\DependencyInjector
+     * @var \ride\library\dependency\DependencyInjector
      */
     protected $di;
 
@@ -36,7 +36,7 @@ abstract class AbstractInjectableArgumentParser implements InjectableArgumentPar
 
     /**
      * Sets the dependency injector to this parser
-     * @param ride\library\dependency\DependencyInjector $di
+     * @param \ride\library\dependency\DependencyInjector $di
      * @return null
      */
     public function setDependencyInjector(DependencyInjector $dependencyInjector) {
@@ -54,7 +54,7 @@ abstract class AbstractInjectableArgumentParser implements InjectableArgumentPar
 
     /**
      * Gets the id of the dependency
-     * @param zibo\library\dependency\DependencyCallArgument $argument
+     * @param \ride\library\dependency\DependencyCallArgument $argument
      * @return string|null
      */
     protected function getDependencyId(DependencyCallArgument $argument) {
@@ -68,7 +68,7 @@ abstract class AbstractInjectableArgumentParser implements InjectableArgumentPar
      * @return mixed
      */
     protected function getDependency($interface, $id) {
-        return $this->dependencyInjector->get($interface, $id, null, $this->exclude);
+        return $this->dependencyInjector->get($interface, $id, null, false, $this->exclude);
     }
 
     /**

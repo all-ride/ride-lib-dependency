@@ -11,7 +11,7 @@ class DependenciesArgumentParser extends AbstractInjectableArgumentParser {
 
     /**
      * Gets the actual value of the argument
-     * @param ride\library\dependency\DependencyCallArgument $argument
+     * @param \ride\library\dependency\DependencyCallArgument $argument
      * @return mixed The value
      */
     public function getValue(DependencyCallArgument $argument) {

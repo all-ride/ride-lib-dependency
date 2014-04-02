@@ -71,7 +71,7 @@ class DependencyInjector implements Invoker {
 
     /**
      * Instance of the object factory
-     * @var ride\library\ObjectFactory
+     * @var \ride\library\ObjectFactory
      */
     protected $objectFactory;
 
@@ -95,9 +95,9 @@ class DependencyInjector implements Invoker {
 
     /**
      * Constructs a new dependency injector
-     * @param ride\library\dependency\DependencyContainer $container Container
+     * @param \ride\library\dependency\DependencyContainer $container Container
      * with dependency definitions
-     * @param ride\library\reflection\ObjectFactory $objectFactory Creator of
+     * @param \ride\library\reflection\ObjectFactory $objectFactory Creator of
      * objects
      * @return null
      */
@@ -128,7 +128,7 @@ class DependencyInjector implements Invoker {
 
     /**
      * Gets the reflection helper
-     * @return ride\library\reflection\ReflectionHelper
+     * @return \ride\library\reflection\ReflectionHelper
      */
     public function getReflectionHelper() {
         return $this->reflectionHelper;
@@ -163,7 +163,7 @@ class DependencyInjector implements Invoker {
 
     /**
      * Sets the container of the dependencies. All created instances will be reset.
-     * @param ride\core\dependency\DependencyContainer $container The container to set
+     * @param \ride\library\dependency\DependencyContainer $container The container to set
      * @param boolean $clearInstances Set to true to clear all loaded instances
      * @return null
      */
@@ -177,7 +177,7 @@ class DependencyInjector implements Invoker {
 
     /**
      * Gets the container of the dependencies
-     * @return ride\core\dependency\InjectionDefinitionContainer
+     * @return \ride\library\dependency\InjectionDefinitionContainer
      */
     public function getContainer() {
         return $this->container;
@@ -191,9 +191,9 @@ class DependencyInjector implements Invoker {
      * not provided the class name of the instance will be used as interface
      * @param string $id Id of the instance
      * @return null
-     * @throws ride\library\dependency\exception\DependencyException if the
+     * @throws \ride\library\dependency\exception\DependencyException if the
      * provided instance is not a object
-     * @throws ride\library\dependency\exception\DependencyException if the
+     * @throws \ride\library\dependency\exception\DependencyException if the
      * provided interface is empty or invalid
      */
     public function setInstance($instance, $interface = null, $id = null) {
@@ -359,17 +359,19 @@ class DependencyInjector implements Invoker {
      * If an id is provided,the exclude array will be ignored
      * @param array $arguments Array with the arguments for the constructor of
      * the interface. Passing arguments will always result in a new instance.
+     * @param boolean $invokeCalls Flag to see if the calls should be invoked
+     * when there are arguments provided
      * @param array $exclude Array with the interface as key and an array with
      * id's of dependencies as key to exclude from this get call. You should not
      * set this argument, this is used in recursive calls for the actual
      * dependency injection.
      * @return mixed Instance of the requested class
-     * @throws ride\library\dependency\exceptin\DependencyException if the class name
+     * @throws \ride\library\dependency\exception\DependencyException if the class name
      * or the id are invalid
-     * @throws ride\library\dependency\exception\DependencyException if the dependency
+     * @throws \ride\library\dependency\exception\DependencyException if the dependency
      * could not be created
      */
-    public function get($interface, $id = null, array $arguments = null, array $exclude = null) {
+    public function get($interface, $id = null, array $arguments = null, $invokeCalls = false, array $exclude = null) {
         if (!is_string($interface) || !$interface) {
             throw new DependencyException('Could not get dependency: provided interface is empty or invalid');
         }
@@ -455,29 +457,31 @@ class DependencyInjector implements Invoker {
             }
         }
 
-        if ($arguments !== null) {
+        if ($arguments !== null && !$invokeCalls) {
             // arguments provided, act as factory and don't register the instance
             return $instance;
         }
 
         // register the instance
-        if ($dependency) {
-            $interfaces = $dependency->getInterfaces();
-            $interfaces[$interface] = true;
-        } else {
-            $interfaces = array($interface => true);
-        }
-
-        foreach ($interfaces as $interface => $null) {
-            if (!isset($this->instances[$interface])) {
-                $this->instances[$interface] = array();
+        if ($arguments === null) {
+            if ($dependency) {
+                $interfaces = $dependency->getInterfaces();
+                $interfaces[$interface] = true;
+            } else {
+                $interfaces = array($interface => true);
             }
 
-            $this->instances[$interface][$id] = $instance;
+            foreach ($interfaces as $interface => $null) {
+                if (!isset($this->instances[$interface])) {
+                    $this->instances[$interface] = array();
+                }
+
+                $this->instances[$interface][$id] = $instance;
+            }
         }
 
         // invoke defined calls
-        if ($dependency) {
+        if ($dependency && ($arguments === null || $invokeCalls)) {
             $calls = $dependency->getCalls();
             if ($calls) {
                 foreach ($calls as $call) {
@@ -669,7 +673,7 @@ class DependencyInjector implements Invoker {
         $argumentClass = $argument->getClass();
         if ($argumentClass) {
             try {
-                return $this->get($argumentClass->getName(), null, null, $exclude);
+                return $this->get($argumentClass->getName(), null, null, false, $exclude);
             } catch (DependencyException $e) {
                 $exception = $e;
             }
