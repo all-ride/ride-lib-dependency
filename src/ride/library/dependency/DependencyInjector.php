@@ -359,6 +359,8 @@ class DependencyInjector implements Invoker {
      * If an id is provided,the exclude array will be ignored
      * @param array $arguments Array with the arguments for the constructor of
      * the interface. Passing arguments will always result in a new instance.
+     * @param boolean $invokeCalls Flag to see if the calls should be invoked
+     * when there are arguments provided
      * @param array $exclude Array with the interface as key and an array with
      * id's of dependencies as key to exclude from this get call. You should not
      * set this argument, this is used in recursive calls for the actual
@@ -369,7 +371,7 @@ class DependencyInjector implements Invoker {
      * @throws ride\library\dependency\exception\DependencyException if the dependency
      * could not be created
      */
-    public function get($interface, $id = null, array $arguments = null, array $exclude = null) {
+    public function get($interface, $id = null, array $arguments = null, $invokeCalls = false, array $exclude = null) {
         if (!is_string($interface) || !$interface) {
             throw new DependencyException('Could not get dependency: provided interface is empty or invalid');
         }
@@ -455,29 +457,31 @@ class DependencyInjector implements Invoker {
             }
         }
 
-        if ($arguments !== null) {
+        if ($arguments !== null && !$invokeCalls) {
             // arguments provided, act as factory and don't register the instance
             return $instance;
         }
 
         // register the instance
-        if ($dependency) {
-            $interfaces = $dependency->getInterfaces();
-            $interfaces[$interface] = true;
-        } else {
-            $interfaces = array($interface => true);
-        }
-
-        foreach ($interfaces as $interface => $null) {
-            if (!isset($this->instances[$interface])) {
-                $this->instances[$interface] = array();
+        if ($arguments === null) {
+            if ($dependency) {
+                $interfaces = $dependency->getInterfaces();
+                $interfaces[$interface] = true;
+            } else {
+                $interfaces = array($interface => true);
             }
 
-            $this->instances[$interface][$id] = $instance;
+            foreach ($interfaces as $interface => $null) {
+                if (!isset($this->instances[$interface])) {
+                    $this->instances[$interface] = array();
+                }
+
+                $this->instances[$interface][$id] = $instance;
+            }
         }
 
         // invoke defined calls
-        if ($dependency) {
+        if ($dependency && ($arguments === null || $invokeCalls)) {
             $calls = $dependency->getCalls();
             if ($calls) {
                 foreach ($calls as $call) {
@@ -669,7 +673,7 @@ class DependencyInjector implements Invoker {
         $argumentClass = $argument->getClass();
         if ($argumentClass) {
             try {
-                return $this->get($argumentClass->getName(), null, null, $exclude);
+                return $this->get($argumentClass->getName(), null, null, false, $exclude);
             } catch (DependencyException $e) {
                 $exception = $e;
             }
