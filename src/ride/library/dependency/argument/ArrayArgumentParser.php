@@ -11,7 +11,7 @@ class ArrayArgumentParser implements ArgumentParser {
 
     /**
      * Gets the actual value of the argument
-     * @param ride\library\dependency\DependencyCallArgument $argument The argument definition
+     * @param \ride\library\dependency\DependencyCallArgument $argument The argument definition
      * @return mixed The value
      */
     public function getValue(DependencyCallArgument $argument) {

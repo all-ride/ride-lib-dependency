@@ -71,7 +71,7 @@ class DependencyInjector implements Invoker {
 
     /**
      * Instance of the object factory
-     * @var ride\library\ObjectFactory
+     * @var \ride\library\ObjectFactory
      */
     protected $objectFactory;
 
@@ -95,9 +95,9 @@ class DependencyInjector implements Invoker {
 
     /**
      * Constructs a new dependency injector
-     * @param ride\library\dependency\DependencyContainer $container Container
+     * @param \ride\library\dependency\DependencyContainer $container Container
      * with dependency definitions
-     * @param ride\library\reflection\ObjectFactory $objectFactory Creator of
+     * @param \ride\library\reflection\ObjectFactory $objectFactory Creator of
      * objects
      * @return null
      */
@@ -128,7 +128,7 @@ class DependencyInjector implements Invoker {
 
     /**
      * Gets the reflection helper
-     * @return ride\library\reflection\ReflectionHelper
+     * @return \ride\library\reflection\ReflectionHelper
      */
     public function getReflectionHelper() {
         return $this->reflectionHelper;
@@ -163,7 +163,7 @@ class DependencyInjector implements Invoker {
 
     /**
      * Sets the container of the dependencies. All created instances will be reset.
-     * @param ride\core\dependency\DependencyContainer $container The container to set
+     * @param \ride\library\dependency\DependencyContainer $container The container to set
      * @param boolean $clearInstances Set to true to clear all loaded instances
      * @return null
      */
@@ -177,7 +177,7 @@ class DependencyInjector implements Invoker {
 
     /**
      * Gets the container of the dependencies
-     * @return ride\core\dependency\InjectionDefinitionContainer
+     * @return \ride\library\dependency\InjectionDefinitionContainer
      */
     public function getContainer() {
         return $this->container;
@@ -191,9 +191,9 @@ class DependencyInjector implements Invoker {
      * not provided the class name of the instance will be used as interface
      * @param string $id Id of the instance
      * @return null
-     * @throws ride\library\dependency\exception\DependencyException if the
+     * @throws \ride\library\dependency\exception\DependencyException if the
      * provided instance is not a object
-     * @throws ride\library\dependency\exception\DependencyException if the
+     * @throws \ride\library\dependency\exception\DependencyException if the
      * provided interface is empty or invalid
      */
     public function setInstance($instance, $interface = null, $id = null) {
@@ -366,9 +366,9 @@ class DependencyInjector implements Invoker {
      * set this argument, this is used in recursive calls for the actual
      * dependency injection.
      * @return mixed Instance of the requested class
-     * @throws ride\library\dependency\exceptin\DependencyException if the class name
+     * @throws \ride\library\dependency\exception\DependencyException if the class name
      * or the id are invalid
-     * @throws ride\library\dependency\exception\DependencyException if the dependency
+     * @throws \ride\library\dependency\exception\DependencyException if the dependency
      * could not be created
      */
     public function get($interface, $id = null, array $arguments = null, $invokeCalls = false, array $exclude = null) {
