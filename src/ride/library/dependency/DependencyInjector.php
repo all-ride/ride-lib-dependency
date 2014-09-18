@@ -335,6 +335,12 @@ class DependencyInjector implements Invoker {
     public function getByTag($interface = null, $include = null, $exclude = null) {
         $tagDependencies = array();
 
+        if ($interface) {
+            $useId = true;
+        } else {
+            $useId = false;
+        }
+
         $dependencies = $this->container->getDependenciesByTag($interface, $include, $exclude);
         foreach ($dependencies as $dependency) {
             $interfaces = $dependency->getInterfaces();
@@ -345,7 +351,13 @@ class DependencyInjector implements Invoker {
                 $interface = $dependency->getClassName();
             }
 
-            $tagDependencies[] = $this->get($interface, $dependency->getId());
+            if ($useId) {
+                $dependencyId = $dependency->getId();
+
+                $tagDependencies[$dependencyId] = $this->get($interface, $dependencyId);
+            } else {
+                $tagDependencies[] = $this->get($interface, $dependency->getId());
+            }
         }
 
         return $tagDependencies;
