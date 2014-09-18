@@ -140,6 +140,8 @@ class DependencyContainer {
      * @return array Dependencies with included tags and no excluded tags
      */
     protected function filterDependenciesByTag(array $dependencies, array $include, array $exclude) {
+        $result = array();
+
         foreach ($dependencies as $dependency) {
             foreach ($include as $tag) {
                 if (!$dependency->hasTag($tag)) {
