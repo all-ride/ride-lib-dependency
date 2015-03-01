@@ -15,6 +15,19 @@ class DependencyTest extends PHPUnit_Framework_TestCase {
 
         $this->assertEquals($className, $dependency->getClassName());
         $this->assertNull($dependency->getId());
+        $this->assertNull($dependency->getConstructCall());
+        $this->assertNull($dependency->getConstructorArguments());
+        $this->assertNull($dependency->getCalls());
+    }
+
+    public function testSetConstructorCall() {
+        $constructCall = new DependencyConstructCall('interface', 'method');
+
+        $dependency = new Dependency($constructCall);
+
+        $this->assertEquals($constructCall, $dependency->getConstructCall());
+        $this->assertNull($dependency->getId());
+        $this->assertNull($dependency->getClassName());
         $this->assertNull($dependency->getConstructorArguments());
         $this->assertNull($dependency->getCalls());
     }

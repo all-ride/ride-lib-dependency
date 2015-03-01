@@ -319,8 +319,9 @@ class DependencyInjector implements Invoker {
 
         $dependencies = $this->container->getDependencies($interface);
         foreach ($dependencies as $dependency) {
-            $id = $dependency->getId();
-            $interfaceDependencies[$id] = $this->get($interface, $id);
+            $dependencyId = $dependency->getId();
+
+            $interfaceDependencies[$dependencyId] = $this->get($interface, $dependencyId);
         }
 
         return $interfaceDependencies;
@@ -517,6 +518,23 @@ class DependencyInjector implements Invoker {
      * @throws Exception when the dependency could not be created
      */
     protected function create($interface, Dependency $dependency, array $arguments = null, array $exclude = null) {
+        $constructCall = $dependency->getConstructCall();
+        if ($constructCall) {
+            // dependency is constructed through a call
+            $factory = $this->get($constructCall->getInterface(), $constructCall->getId(), null, false, $exclude);
+
+            $instance = $this->invokeCallback(array($factory, $constructCall->getMethodName()), $constructCall->getArguments(), $exclude);
+
+            try {
+                $this->reflectionHelper->implementsOrExtends($instance, $interface);
+            } catch (Exception $exception) {
+                throw new DependencyException('Could not create instance for interface ' . $interface . ' with id ' . $dependency->getId() . ': ' . $exception->getMessage(), 0, $exception);
+            }
+
+            return $instance;
+        }
+
+        // dependency is a class to be constructed manually
         $className = $dependency->getClassName();
 
         $this->addExclude($className, $dependency->getId(), $exclude);

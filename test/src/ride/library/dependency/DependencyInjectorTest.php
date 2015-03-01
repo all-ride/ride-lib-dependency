@@ -113,6 +113,35 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
         $this->assertTrue($instance instanceof TestObject);
     }
 
+    public function testGetWithConstructorCall() {
+        $token = 'construct';
+
+        $this->test = new TestObject($token);
+
+        $interface = 'ride\\library\\dependency\\TestInterface';
+
+        $constructCall = new DependencyConstructCall('ride\\library\\dependency\\DependencyInjectorTest', 'constructTest');
+
+        $dependency = new Dependency($constructCall);
+        $dependency->addInterface($interface);
+
+        $container = new DependencyContainer();
+        $container->addDependency($dependency);
+
+        $this->di->setContainer($container);
+        $this->di->setInstance($this);
+
+        $instance = $this->di->get($interface);
+
+        $this->assertNotNull($instance);
+        $this->assertTrue($instance instanceof TestObject);
+        $this->assertTrue($instance === $this->test);
+    }
+
+    public function constructTest() {
+        return $this->test;
+    }
+
     public function testGetCallsConstructor() {
         $interface = 'ride\\library\\dependency\\TestInterface';
 

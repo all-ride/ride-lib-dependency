@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "ride/lib-reflection": ">=0.3.0"
+        "ride/lib-reflection": ">=0.4.5"
     }, 
     "autoload": {
         "psr-0": {

@@ -10,19 +10,19 @@ use ride\library\dependency\exception\DependencyException;
 class Dependency {
 
     /**
-     * The full class name of this dependency
+     * Full class name of this dependency
      * @var string
      */
     protected $className;
 
     /**
-     * The id of this definition
+     * Id of this definition
      * @var string
      */
     protected $id;
 
     /**
-     * Interfaces to implement
+     * Interfaces the instance implements
      * @var array
      */
     protected $interfaces;
@@ -47,17 +47,41 @@ class Dependency {
 
     /**
      * Constructs a new dependency
-     * @param string $className A full class name
+     * @param string|DependencyConstructCall $classOrCall Full class name or a
+     * dependency construct call
+     * @param string $id Id of this dependency
      * @return null
      */
-    public function __construct($className, $id = null) {
-        $this->setClassName($className);
+    public function __construct($classOrCall, $id = null) {
+        if ($classOrCall instanceof DependencyConstructCall) {
+            $this->setConstructCall($classOrCall);
+        } else {
+            $this->setClassName($classOrCall);
+        }
         $this->setId($id);
 
         $this->interfaces = array();
         $this->constructorArguments = null;
         $this->calls = null;
         $this->tags = null;
+    }
+
+    /**
+     * Sets the call which constructs this dependency
+     * @param DependencyConstructCall $constructCall
+     * @return null
+     */
+    public function setConstructCall(DependencyCall $constructCall) {
+        $this->constructCall = $constructCall;
+        $this->className = null;
+    }
+
+    /**
+     * Gets the call which constructs this dependency
+     * @return DependencyConstructCall|null
+     */
+    public function getConstructCall() {
+        return $this->constructCall;
     }
 
     /**
@@ -71,11 +95,12 @@ class Dependency {
         }
 
         $this->className = $className;
+        $this->constructCall = null;
     }
 
     /**
      * Gets the class of this dependency
-     * @return string A full class name
+     * @return string|null Full class name or null when a constructor call is set
      */
     public function getClassName() {
         return $this->className;
