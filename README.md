@@ -51,6 +51,15 @@ Check this code sample to see the possibilities of this library:
     // add it to the container
     $dependencyContainer->addDependency($dependency);
 
+    // define a factory for a dependency
+    $constructCall = new DependencyConstructCall('some\Factory', 'methodOnFactory');
+    
+    $dependency = new Dependency($constructCall, 'id');
+    $dependency->addCall(new DependencyCall('doSomething'));
+    $dependency->addInterface('some\Interface');
+    
+    $dependencyContainer->addDependency($dependency);
+
     // Your dependency container gets filled up with this kind of definitions.
     // Once setup, you are ready to get your instances.
 
@@ -64,7 +73,7 @@ Check this code sample to see the possibilities of this library:
         $instance = $dependencyInjector->get('third\Class');
         // your instance if the third\Class can be created with the available dependencies
     } catch (Exception $e) {
-        // when it's an class is not constructable or when some required arguments could
+        // when it's a class, is not constructable or when some required arguments could
         // not be injected
     }
     
@@ -74,3 +83,4 @@ Check this code sample to see the possibilities of this library:
     $callback = array(new some\Class(), 'call');
     $arguments = array('name' => $value); // arguments you know/want, the rest will be injected
     $returnValue = $dependencyInjector->invoke($callback, $arguments);
+    
