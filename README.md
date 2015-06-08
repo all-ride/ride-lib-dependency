@@ -41,7 +41,7 @@ $dependencyContainer->addDependency($dependency);
 
 // define the constructor call
 $call = new DependencyCall('__construct');
-$call->addArgument(new DependencyCallArgument('name', 'dependency', array('interface' => 'some\Interface', 'id' => 'id1)));
+$call->addArgument(new DependencyCallArgument('name', 'dependency', array('interface' => 'some\Interface', 'id' => 'id1')));
 
 // define the dependency and add some calls
 $dependency = new Dependency('another\Class', 'id2');
