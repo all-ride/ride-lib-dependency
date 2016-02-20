@@ -86,4 +86,39 @@ abstract class AbstractInjectableArgumentParser implements InjectableArgumentPar
         return $this->dependencyInjector->getByTag($interface, $include, $exclude);
     }
 
+    /**
+     * Checks if this argument is scalar or needs intelligence
+     * @return boolean True if this argument needs intelligence, false otherwise
+     */
+    public function needsIntelligence() {
+        return true;
+    }
+
+    /**
+     * Gets the intelligence of this argument
+     * @param \ride\library\dependency\DependencyCallArgument $argument Argument
+     * definition
+     * @return \ride\library\dependency\DependencyCallArgument
+     */
+    public function getIntelligence(DependencyCallArgument $argument) {
+        $properties = $argument->getProperties();
+
+        if (isset($properties[self::PROPERTY_ID])) {
+            $properties[self::PROPERTY_ID] = $this->getDependencyId($argument);
+        } else {
+            $container = $this->dependencyInjector->getContainer();
+
+            $dependencies = array_reverse($container->getDependencies($properties[self::PROPERTY_INTERFACE]));
+            foreach ($dependencies as $dependency) {
+                if (!isset($this->exclude[$properties[self::PROPERTY_INTERFACE]][$dependency->getId()])) {
+                    $properties[self::PROPERTY_ID] = $dependency->getId();
+
+                    break;
+                }
+            }
+        }
+
+        return new DependencyCallArgument($argument->getName(), $argument->getType(), $properties);
+    }
+
 }

@@ -7,8 +7,8 @@ use ride\library\dependency\DependencyCallArgument;
 /**
  * Parser for null values
  */
-class NullArgumentParser implements ArgumentParser {
-    
+class NullArgumentParser extends AbstractArgumentParser {
+
     /**
      * Gets the actual value of the argument
      * @param \ride\library\dependency\DependencyCallArgument $argument The argument definition
@@ -17,5 +17,6 @@ class NullArgumentParser implements ArgumentParser {
     public function getValue(DependencyCallArgument $argument) {
         return null;
     }
-    
+
+
 }

@@ -7,7 +7,7 @@ use ride\library\dependency\DependencyCallArgument;
 /**
  * Parser for scalar values
  */
-class ScalarArgumentParser implements ArgumentParser {
+class ScalarArgumentParser extends AbstractArgumentParser {
 
     /**
      * Name of the property for the value

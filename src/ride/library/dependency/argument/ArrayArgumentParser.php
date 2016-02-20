@@ -7,7 +7,7 @@ use ride\library\dependency\DependencyCallArgument;
 /**
  * Parser for array values
  */
-class ArrayArgumentParser implements ArgumentParser {
+class ArrayArgumentParser extends AbstractArgumentParser {
 
     /**
      * Gets the actual value of the argument

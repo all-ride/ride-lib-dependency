@@ -12,6 +12,7 @@ use ride\library\dependency\argument\NullArgumentParser;
 use ride\library\dependency\argument\ScalarArgumentParser;
 use ride\library\dependency\exception\DependencyException;
 use ride\library\dependency\exception\DependencyNotFoundException;
+use ride\library\dependency\intelligence\DependencyIntelligence;
 use ride\library\reflection\exception\ReflectionException;
 use ride\library\reflection\Callback;
 use ride\library\reflection\Invoker;
@@ -88,10 +89,17 @@ class DependencyInjector implements Invoker {
     protected $container;
 
     /**
+     * Gathered intelligence to omit reflection
+     * @var DependencyIntelligence
+     */
+    protected $intelligence;
+
+    /**
      * Created dependency instances
      * @var array
      */
     protected $instances;
+
 
     /**
      * Constructs a new dependency injector
@@ -124,6 +132,14 @@ class DependencyInjector implements Invoker {
         );
 
         $this->instances = array();
+    }
+
+    /**
+     * Sets the intelligence instance to learn dependencies
+     * @param \ride\library\dependency\intelligence\DependencyIntelligence $intelligence
+     */
+    public function setIntelligence(DependencyIntelligence $intelligence = null) {
+        $this->intelligence = $intelligence;
     }
 
     /**
@@ -209,36 +225,21 @@ class DependencyInjector implements Invoker {
             $interfaces = $interface;
         }
 
+        if ($id === null) {
+            $id = 0;
+        }
+
         foreach ($interfaces as $interface) {
             if (!is_string($interface) || !$interface) {
                 throw new DependencyException('Provided interface is empty or invalid');
             }
 
             if (isset($this->instances[$interface])) {
-                if (is_array($this->instances[$interface])) {
-                    if ($id) {
-                        $this->instances[$interface][$id] = $instance;
-                    } else {
-                        $this->instances[$interface][0] = $instance;
-                    }
-                } else {
-                    if ($id) {
-                        $this->instances[$interface] = array(
-                            $this->instances[$interface],
-                            $id => $instance,
-                        );
-                    } else {
-                        $this->instances[$interface] = $instance;
-                    }
-                }
+                $this->instances[$interface][$id] = $instance;
             } else {
-                if ($id) {
-                    $this->instances[$interface] = array(
-                        $id => $instance,
-                    );
-                } else {
-                    $this->instances[$interface] = $instance;
-                }
+                $this->instances[$interface] = array(
+                    $id => $instance,
+                );
             }
         }
     }
@@ -389,9 +390,42 @@ class DependencyInjector implements Invoker {
             throw new DependencyException('Could not get dependency: provided interface is empty or invalid');
         }
 
-        if (!$id && !$arguments && isset($this->instances[$interface]) && !is_array($this->instances[$interface])) {
+        // check for existing instances
+        if ($id === null && $arguments === null && isset($this->instances[$interface][0])) {
             // an instance of this interface is manually set, return it
-            return $this->instances[$interface];
+            return $this->instances[$interface][0];
+        } elseif ($id !== null && $arguments === null && isset($this->instances[$interface][$id])) {
+            // the instance is already created
+            return $this->instances[$interface][$id];
+        }
+
+        // check for known intelligence to omit reflection
+        if ($this->intelligence && $arguments === null) {
+            $fingerprint = $this->intelligence->getFingerprint($interface, $id, $exclude);
+
+            $instanceId = $this->intelligence->getInstanceId($fingerprint);
+            if ($instanceId) {
+                $meta = $this->intelligence->getInstanceMeta($instanceId);
+                if (!isset($exclude[$meta['class']][$meta['id']])) {
+                    $instance = $this->intelligence->createInstance($instanceId, $this);
+
+                    $this->setInstance($instance, $meta['interfaces'], $meta['id']);
+                    if ($id === null) {
+                        $this->setInstance($instance, $interface);
+                    }
+
+                    return $instance;
+                }
+            }
+
+            // get intelligence instance to gather reflection knownledge
+            $intelligence = $this->intelligence->getIntelligenceInstance($fingerprint);
+            if ($id === null) {
+                $intelligence->setIsAnonymous(true);
+            }
+        } else {
+            // no intelligence
+            $intelligence = null;
         }
 
         $container = $this->getContainer();
@@ -406,11 +440,6 @@ class DependencyInjector implements Invoker {
                 throw new DependencyException('Could not get dependency for ' . $interface . ': provided id of the dependency is empty or invalid');
             }
 
-            if (isset($this->instances[$interface][$id]) && $arguments === null) {
-                // the instance is already created
-                return $this->instances[$interface][$id];
-            }
-
             // specific instance needs to be created
             if (!isset($dependencies[$id]) || isset($exclude[$dependencies[$id]->getClassName()][$id])) {
                 throw new DependencyNotFoundException('Could not get dependency for ' . $interface . ': no injectable dependency available with id ' . $id);
@@ -418,42 +447,41 @@ class DependencyInjector implements Invoker {
 
             $dependency = $dependencies[$id];
         } else {
-            if (isset($this->instances[$interface][0])) {
-                // return manually set instance
-                return $this->instances[$interface][0];
-            }
-
             // gets the last defined dependency which is not excluded
             do {
                 $dependency = array_pop($dependencies);
-                if (!$dependency) {
-                    // no dependency found, check for undefined instance
-                    $exception = null;
+                if ($dependency) {
+                    $id = $dependency->getId();
 
-                    if (!isset($exclude[$interface][self::ID_UNDEFINED])) {
-                        if (isset($this->instances[$interface][self::ID_UNDEFINED])) {
-                            // undefined instance already created
-                            $instance = $this->instances[$interface][self::ID_UNDEFINED];
-                        } else {
-                            // create undefined instance
-                            try {
-                                $instance = $this->createUndefined($interface, $arguments, $exclude);
-                            } catch (Exception $e) {
-                                $exception = $e;
-                            }
-                        }
-                    }
-
-                    if (!$instance) {
-                        throw new DependencyNotFoundException('Could not get dependency for ' . $interface . ': no injectable dependency available', 0, $exception);
-                    }
-
-                    $id = self::ID_UNDEFINED;
-
-                    break;
+                    continue;
                 }
 
-                $id = $dependency->getId();
+                // no dependency found, check for undefined instance
+                $exception = null;
+
+                if (!isset($exclude[$interface][self::ID_UNDEFINED])) {
+                    if (isset($this->instances[$interface][self::ID_UNDEFINED])) {
+                        // undefined instance already created
+                        $instance = $this->instances[$interface][self::ID_UNDEFINED];
+                    } else {
+                        // create undefined instance
+                        try {
+                            $instance = $this->createUndefined($interface, $arguments, $exclude, $intelligence);
+                        } catch (Exception $e) {
+                            $exception = $e;
+                        }
+                    }
+                }
+
+                if (!$instance) {
+                    if ($intelligence) {
+                        $this->intelligence->removeIntelligenceInstance($intelligence->getFingerprint());
+                    }
+
+                    throw new DependencyNotFoundException('Could not get dependency for ' . $interface . ': no injectable dependency available', 0, $exception);
+                }
+
+                $id = self::ID_UNDEFINED;
             } while ($dependency && isset($exclude[$dependency->getClassName()][$id]));
 
             if (isset($this->instances[$interface][$id]) && $arguments === null) {
@@ -465,7 +493,7 @@ class DependencyInjector implements Invoker {
         // creates a new instance
         if (!$instance) {
             try {
-                $instance = $this->create($interface, $dependency, $arguments, $exclude);
+                $instance = $this->create($interface, $dependency, $arguments, $exclude, $intelligence);
             } catch (Exception $exception) {
                 throw new DependencyException('Could not get dependency for interface ' . $interface . ' with id ' . $id . ': instance could not be created', 0, $exception);
             }
@@ -485,6 +513,12 @@ class DependencyInjector implements Invoker {
                 $interfaces = array($interface => true);
             }
 
+            if ($intelligence) {
+                $intelligence->setClassName(get_class($instance));
+                $intelligence->setInterfaces($interfaces);
+                $intelligence->setId($id);
+            }
+
             foreach ($interfaces as $interface => $null) {
                 if (!isset($this->instances[$interface])) {
                     $this->instances[$interface] = array();
@@ -499,7 +533,7 @@ class DependencyInjector implements Invoker {
             $calls = $dependency->getCalls();
             if ($calls) {
                 foreach ($calls as $call) {
-                    $this->invokeCallback(array($instance, $call->getMethodName()), $call->getArguments(), $exclude);
+                    $this->invokeCallback(array($instance, $call->getMethodName()), $call->getArguments(), $exclude, false, $intelligence);
                 }
             }
         }
@@ -518,19 +552,29 @@ class DependencyInjector implements Invoker {
      * @return mixed Instance of the dependency
      * @throws Exception when the dependency could not be created
      */
-    protected function create($interface, Dependency $dependency, array $arguments = null, array $exclude = null) {
+    protected function create($interface, Dependency $dependency, array $arguments = null, array $exclude = null, $intelligence = null) {
         $constructCall = $dependency->getConstructCall();
         if ($constructCall) {
             // dependency is constructed through a call
             $factory = $this->get($constructCall->getInterface(), $constructCall->getId(), null, false, $exclude);
 
-            $instance = $this->invokeCallback(array($factory, $constructCall->getMethodName()), $constructCall->getArguments(), $exclude);
+            if ($intelligence) {
+                $intelligence->setFactory($constructCall->getInterface(), $constructCall->getId());
+                $intelligence->addMethod($constructCall->getMethodName());
+            }
+
+            $instance = $this->invokeCallback(array($factory, $constructCall->getMethodName()), $constructCall->getArguments(), $exclude, false, $intelligence);
 
             try {
                 $this->reflectionHelper->implementsOrExtends($instance, $interface);
             } catch (Exception $exception) {
+                if ($intelligence) {
+                    $this->intelligence->removeIntelligenceInstance($intelligence->getFingerprint());
+                }
+
                 throw new DependencyException('Could not create instance for interface ' . $interface . ' with id ' . $dependency->getId() . ': ' . $exception->getMessage(), 0, $exception);
             }
+
 
             return $instance;
         }
@@ -553,7 +597,16 @@ class DependencyInjector implements Invoker {
             }
         }
 
-        $arguments = $this->parseArguments($constructorArguments, $reflectionArguments, $exclude);
+        if ($intelligence) {
+            $intelligence->setClassName($className);
+            $intelligence->addMethod('__construct');
+        }
+
+        try {
+            $arguments = $this->parseArguments($constructorArguments, $reflectionArguments, $exclude, false, $intelligence);
+        } catch (Exception $e) {
+            throw $e;
+        }
 
         return $this->reflectionHelper->createObject($className, $arguments, $interface);
     }
@@ -565,7 +618,7 @@ class DependencyInjector implements Invoker {
      * @param array $exclude
      * @return null|mixed Instance if succeeded, null otherwise
      */
-    protected function createUndefined($className, array $arguments = null, array $exclude = null) {
+    protected function createUndefined($className, array $arguments = null, array $exclude = null, $intelligence = null) {
         $this->addExclude($className, self::ID_UNDEFINED, $exclude);
 
         $reflectionClass = new ReflectionClass($className);
@@ -579,8 +632,13 @@ class DependencyInjector implements Invoker {
             $arguments = array();
         }
 
+        if ($intelligence) {
+            $intelligence->setClassName($className);
+            $intelligence->addMethod('__construct');
+        }
+
         try {
-            $arguments = $this->parseArguments($arguments, $reflectionArguments, $exclude);
+            $arguments = $this->parseArguments($arguments, $reflectionArguments, $exclude, false, $intelligence);
         } catch (DependencyException $e) {
             throw new DependencyException('Could not create instance of ' . $className . ': arguments could not be parsed', 0, $e);
         }
@@ -608,7 +666,7 @@ class DependencyInjector implements Invoker {
      * which are not in the signature
      * @return mixed Return value of the callback
      */
-    protected function invokeCallback($callback, array $arguments = null, array $exclude = null, $isDynamic = false) {
+    protected function invokeCallback($callback, array $arguments = null, array $exclude = null, $isDynamic = false, $intelligence = null) {
         $this->setExclude($exclude);
 
         $callback = new Callback($callback);
@@ -620,10 +678,14 @@ class DependencyInjector implements Invoker {
             $arguments = array();
         }
 
-        $callbackArguments = $this->reflectionHelper->getArguments($callback);
+        if ($intelligence) {
+            $intelligence->addMethod($callback->getMethod());
+        }
+
+        $reflectionArguments = $this->reflectionHelper->getArguments($callback);
 
         try {
-            $arguments = $this->parseArguments($arguments, $callbackArguments, $exclude, $isDynamic);
+            $arguments = $this->parseArguments($arguments, $reflectionArguments, $exclude, $isDynamic, $intelligence);
         } catch (DependencyException $exception) {
             throw new ReflectionException('Could not invoke ' . ($isDynamic ? 'dynamic ' : '') . $callback . ': could not parse arguments', 0, $exception);
         }
@@ -637,10 +699,15 @@ class DependencyInjector implements Invoker {
      * @param array $definedArguments Argument definition
      * @return array Argument array ready for invokation
      */
-    public function parseArguments(array $arguments, array $definedArguments, array $exclude = null, $isDynamic = false) {
+    public function parseArguments(array $arguments, array $definedArguments, array $exclude = null, $isDynamic = false, $intelligence = null) {
         foreach ($definedArguments as $name => $argument) {
             if (isset($arguments[$name]) || array_key_exists($name, $arguments) !== false) {
                 $argument = $arguments[$name];
+
+                // if ($intelligence && $intelligence->getFingerprint() === 'ride_web_cms_Cms__') {
+                    // print_r($argument);
+                    // print_r('<br />');
+                // }
 
                 if ($argument instanceof DependencyCallArgument) {
                     $type = $argument->getType();
@@ -649,13 +716,25 @@ class DependencyInjector implements Invoker {
                     }
 
                     $definedArguments[$name] = $this->argumentParsers[$type]->getValue($argument);
+
+                    if ($intelligence) {
+                        if ($this->argumentParsers[$type]->needsIntelligence()) {
+                            $intelligence->addArgument($name, $this->argumentParsers[$type]->getIntelligence($argument));
+                        } else {
+                            $intelligence->addArgument($name, $definedArguments[$name]);
+                        }
+                    }
                 } else {
                     $definedArguments[$name] = $argument;
+
+                    if ($intelligence) {
+                        $intelligence->addArgument($name, $argument);
+                    }
                 }
 
                 unset($arguments[$name]);
-            } elseif ($argument instanceof ReflectionParameter) {
-                $definedArguments[$name] = $this->parseReflectionParameter($argument, $exclude);
+            } else {
+                $definedArguments[$name] = $this->parseReflectionParameter($argument, $exclude, $intelligence);
             }
         }
 
@@ -694,8 +773,12 @@ class DependencyInjector implements Invoker {
      * @return mixed Value for the argument
      * @throws DependencyException when the value could not be retrieved
      */
-    protected function parseReflectionParameter(ReflectionParameter $argument, array $exclude = null) {
+    protected function parseReflectionParameter(ReflectionParameter $argument, array $exclude = null, $intelligence = null) {
         if ($argument->isOptional()) {
+            if ($intelligence) {
+                $intelligence->addArgument($argument->getName(), $argument->getDefaultValue());
+            }
+
             return $argument->getDefaultValue();
         }
 
@@ -704,7 +787,15 @@ class DependencyInjector implements Invoker {
         $argumentClass = $argument->getClass();
         if ($argumentClass) {
             try {
-                return $this->get($argumentClass->getName(), null, null, false, $exclude);
+                $parameter = $this->get($argumentClass->getName(), null, null, false, $exclude);
+                if ($intelligence) {
+                    $dependencyArgument = new DependencyCallArgument($argument->getName(), 'dependency', array('interface' => $argumentClass->getName()));
+                    $dependencyArgument = $this->argumentParsers['dependency']->getIntelligence($dependencyArgument);
+
+                    $intelligence->addArgument($argument->getName(), $dependencyArgument);
+                }
+
+                return $parameter;
             } catch (DependencyException $e) {
                 $exception = $e;
             }
