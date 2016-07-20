@@ -11,7 +11,7 @@ The _Dependency_ class is used to define your class instances.
 You can tell what interfaces a class implements so the DependencyInjector knows when to use this instance.
 Define method calls to build up your instance as you need it, ready to work.
 
-When you have multiple instances of a class, you can set an id to the dependency to specify the each instance.
+When you have multiple instances of a class, you can set an id to the dependency to specify each instance.
 
 Dependencies can be tagged to retrieve a dependency subset for a specified interface.
 
