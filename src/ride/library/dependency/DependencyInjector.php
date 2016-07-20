@@ -411,6 +411,7 @@ class DependencyInjector implements Invoker {
                 return $this->instances[$interface][$id];
             }
 
+            // specific instance needs to be created
             if (!isset($dependencies[$id]) || isset($exclude[$dependencies[$id]->getClassName()][$id])) {
                 throw new DependencyNotFoundException('Could not get dependency for ' . $interface . ': no injectable dependency available with id ' . $id);
             }
