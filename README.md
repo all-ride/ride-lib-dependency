@@ -3,21 +3,24 @@
 Dependency injection library of the PHP Ride framework.
 
 This module can create objects and invoke callbacks with dynamic argument injection.
+
 Read more about the dependency injection pattern on [Wikipedia](https://en.wikipedia.org/wiki/Dependency_injection).
 
-## Dependency
+## What's In This Library
+
+### Dependency
 
 The _Dependency_ class is used to define your class instances. 
 You can tell what interfaces a class implements so the DependencyInjector knows when to use this instance.
 Define method calls to build up your instance as you need it, ready to work.
 
-When you have multiple instances of a class, you can set an id to the dependency to specify the each instance.
+When you have multiple instances of a class, you can set an id to the dependency to specify each instance.
 
 Dependencies can be tagged to retrieve a dependency subset for a specified interface.
 
 Instead of literally constructing the object, a dependency can also be defined as being constructed by a factory.
 
-## DependencyInjector
+### DependencyInjector
 
 The _DependencyInjector_ is the facade of this library.
 It has different getters to retrieve a single or multiple instances.
@@ -25,19 +28,19 @@ Dependencies are requested by interface, optionally an id, or for multiple insta
 
 When a requested interface, or instance dependency, is not defined in the container, an attempt is made to automatically construct the instance.
 
-## DependencyContainer
+### DependencyContainer
 
-The _DependencyContainer_ is like it sais, a container of dependencies.
-All you definitions are kept here for the dependency injector to use as it's source.
+The _DependencyContainer_ is like it says, a container of dependencies.
+All your definitions are kept here for the dependency injector to use as it's source.
 
-## DependencyArgumentParser
+### DependencyArgumentParser
 
 When defining method calls for your dependencies, you can pass arguments to those calls.
 You have different type of arguments.
 This library defines the following types by default: _null_, _scalar_, _array_, _dependency_ and _call_.
 
 By implementing the _DependencyArgumentParser_ interface, you can create your own argument types.
-Ride will add the _parameter_ and _route_ type with the _ride-app_ and _ride-web_ modules.
+Ride will add the _parameter_ and _route_ type with the [ride/app](https://github.com/all-ride/ride-app) and [ride/web](https://github.com/all-ride/ride-web) modules.
 
 ## Code Sample
 
@@ -124,4 +127,12 @@ $callback = array('some\Static', 'call');
 $callback = array(new some\Class(), 'call');
 $arguments = array('name' => $value); // arguments you know/want, the rest will be injected
 $returnValue = $dependencyInjector->invoke($callback, $arguments);
+```
+
+## Installation
+
+You can use [Composer](http://getcomposer.org) to install this library.
+
+```
+composer require ride/lib-dependency
 ```
