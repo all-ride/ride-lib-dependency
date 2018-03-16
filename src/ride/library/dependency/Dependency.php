@@ -147,6 +147,10 @@ class Dependency {
             return;
         }
 
+        if (!$this->calls) {
+            $this->calls = array();
+        }
+
         $id = $call->getId();
         if (!$id) {
             $id = 'c' . count($this->calls);
