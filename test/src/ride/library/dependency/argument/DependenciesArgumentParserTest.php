@@ -6,10 +6,13 @@ use ride\library\dependency\DependencyCallArgument;
 
 use PHPUnit\Framework\TestCase;
 
-class ArrayArgumentParserTest extends TestCase {
+class DependenciesArgumentParserTest extends TestCase {
 
-    public function testGetValue() {
-        $parser = new ArrayArgumentParser();
+    /**
+     * @expectedException ride\library\dependency\exception\DependencyException
+     */
+    public function testGetValueShouldThrowDependencyException() {
+        $parser = new DependenciesArgumentParser();
 
         $data = array('var1' => 'value', 'var2' => 'value');
         $argument = new DependencyCallArgument('name', 'array', $data);

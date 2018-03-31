@@ -4,9 +4,9 @@ namespace ride\library\dependency;
 
 use ride\library\reflection\ObjectFactory;
 
-use \PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-class DependencyTest extends PHPUnit_Framework_TestCase {
+class DependencyTest extends TestCase {
 
     public function testSetClassName() {
         $className = 'className';
@@ -18,6 +18,52 @@ class DependencyTest extends PHPUnit_Framework_TestCase {
         $this->assertNull($dependency->getConstructCall());
         $this->assertNull($dependency->getConstructorArguments());
         $this->assertNull($dependency->getCalls());
+    }
+
+    public function testRemoveInterfaceShouldReturnFalse() {
+        $constructCall = new DependencyConstructCall('interface', 'method');
+
+        $dependency = new Dependency($constructCall);
+
+        $this->assertFalse($dependency->removeInterface('method'));
+    }
+
+    public function testAddTag() {
+        $constructCall = new DependencyConstructCall('interface', 'method');
+
+        $dependency = new Dependency($constructCall);
+
+        $dependency->addTag('tag');
+
+        $this->assertContains('tag', $dependency->getTags());
+    }
+
+    public function testRemoveTag() {
+        $constructCall = new DependencyConstructCall('interface', 'method');
+
+        $dependency = new Dependency($constructCall);
+
+        $dependency->addTag('tag');
+
+        $dependency->removeTag('tag');
+
+        $this->assertNotContains('tag', $dependency->getTags());
+    }
+
+    public function testRemoveTagShouldReturnFalse() {
+        $constructCall = new DependencyConstructCall('interface', 'method');
+
+        $dependency = new Dependency($constructCall);
+
+        $this->assertFalse($dependency->removeTag('tag'));
+    }
+
+    public function testHasTag() {
+        $constructCall = new DependencyConstructCall('interface', 'method');
+
+        $dependency = new Dependency($constructCall);
+
+        $this->assertFalse($dependency->hasTag('tag'));
     }
 
     public function testSetConstructorCall() {
