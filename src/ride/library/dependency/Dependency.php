@@ -228,6 +228,10 @@ class Dependency {
      * @return null
      */
     public function addTag($tag) {
+        if ($this->tags === null) {
+            $this->tags = array();
+        }
+
         $this->tags[$tag] = $tag;
     }
 
@@ -260,7 +264,7 @@ class Dependency {
      * @return array Array with the tag as key and as value
      */
     public function getTags() {
-        return $this->tags;
+        return $this->tags === null ? array() : $this->tags;
     }
 
 }

@@ -377,7 +377,7 @@ class DependencyInjectorTest extends TestCase {
     /**
      * @expectedException ride\library\dependency\exception\DependencyException
      */
-    public function testUnsetInstanceShouldThrowDependencyException() {
+    public function testUnsetInstanceThrowsExceptionWhenInvalidInterfaceProvided() {
         $invalidInterface = 1000;
 
         $result2 = $this->di->unsetInstance($invalidInterface);
@@ -385,7 +385,7 @@ class DependencyInjectorTest extends TestCase {
 
     public function testGetByTagShouldReturnEmptyArray() {
         $interface = 'ride\\library\\dependency\\TestInterface';
-        
+
         $this->assertSame(array(), $this->di->getByTag($interface));
     }
 

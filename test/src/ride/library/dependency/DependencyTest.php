@@ -28,44 +28,6 @@ class DependencyTest extends TestCase {
         $this->assertFalse($dependency->removeInterface('method'));
     }
 
-    public function testAddTag() {
-        $constructCall = new DependencyConstructCall('interface', 'method');
-
-        $dependency = new Dependency($constructCall);
-
-        $dependency->addTag('tag');
-
-        $this->assertContains('tag', $dependency->getTags());
-    }
-
-    public function testRemoveTag() {
-        $constructCall = new DependencyConstructCall('interface', 'method');
-
-        $dependency = new Dependency($constructCall);
-
-        $dependency->addTag('tag');
-
-        $dependency->removeTag('tag');
-
-        $this->assertNotContains('tag', $dependency->getTags());
-    }
-
-    public function testRemoveTagShouldReturnFalse() {
-        $constructCall = new DependencyConstructCall('interface', 'method');
-
-        $dependency = new Dependency($constructCall);
-
-        $this->assertFalse($dependency->removeTag('tag'));
-    }
-
-    public function testHasTag() {
-        $constructCall = new DependencyConstructCall('interface', 'method');
-
-        $dependency = new Dependency($constructCall);
-
-        $this->assertFalse($dependency->hasTag('tag'));
-    }
-
     public function testSetConstructorCall() {
         $constructCall = new DependencyConstructCall('interface', 'method');
 
@@ -183,6 +145,23 @@ class DependencyTest extends TestCase {
         $dependency->setInterfaces($interfaces);
 
         $this->assertEquals($interfaces, $dependency->getInterfaces());
+    }
+
+    public function testTags() {
+        $dependency = new Dependency('className');
+
+        $this->assertSame(array(), $dependency->getTags());
+        $this->assertFalse($dependency->hasTag('tag'));
+
+        $dependency->addTag('tag');
+
+        $this->assertTrue($dependency->hasTag('tag'));
+        $this->assertContains('tag', $dependency->getTags());
+
+        $this->assertTrue($dependency->removeTag('tag'));
+        $this->assertFalse($dependency->removeTag('unexistant'));
+
+        $this->assertNotContains('tag', $dependency->getTags());
     }
 
 }

@@ -11,15 +11,12 @@ class DependenciesArgumentParserTest extends TestCase {
     /**
      * @expectedException ride\library\dependency\exception\DependencyException
      */
-    public function testGetValueShouldThrowDependencyException() {
-        $parser = new DependenciesArgumentParser();
-
+    public function testGetValueThrowsExceptionWhenNoInterfaceProvided() {
         $data = array('var1' => 'value', 'var2' => 'value');
         $argument = new DependencyCallArgument('name', 'array', $data);
 
-        $result = $parser->getValue($argument);
-
-        $this->assertEquals($data, $result);
+        $parser = new DependenciesArgumentParser();
+        $parser->getValue($argument);
     }
 
 }

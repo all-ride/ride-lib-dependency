@@ -2,8 +2,8 @@
 
 namespace ride\library\dependency\argument;
 
-use ride\library\dependency\DependencyCallArgument;
 use ride\library\dependency\exception\DependencyException;
+use ride\library\dependency\DependencyCallArgument;
 
 /**
  * Parser for an array of defined dependency values.
