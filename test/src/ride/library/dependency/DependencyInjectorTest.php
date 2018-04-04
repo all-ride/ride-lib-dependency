@@ -4,9 +4,9 @@ namespace ride\library\dependency;
 
 use ride\library\reflection\ReflectionHelper;
 
-use \PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
+class DependencyInjectorTest extends TestCase {
 
     private $di;
 
@@ -372,6 +372,21 @@ class DependencyInjectorTest extends PHPUnit_Framework_TestCase {
      */
     public function testSetInstanceThrowsExceptionWhenInvalidInterfaceProvided() {
         $this->di->setInstance($this, $this);
+    }
+
+    /**
+     * @expectedException ride\library\dependency\exception\DependencyException
+     */
+    public function testUnsetInstanceThrowsExceptionWhenInvalidInterfaceProvided() {
+        $invalidInterface = 1000;
+
+        $result2 = $this->di->unsetInstance($invalidInterface);
+    }
+
+    public function testGetByTagShouldReturnEmptyArray() {
+        $interface = 'ride\\library\\dependency\\TestInterface';
+
+        $this->assertSame(array(), $this->di->getByTag($interface));
     }
 
     public function testUnsetInstance() {

@@ -4,9 +4,9 @@ namespace ride\library\dependency;
 
 use ride\library\reflection\ObjectFactory;
 
-use \PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-class DependencyTest extends PHPUnit_Framework_TestCase {
+class DependencyTest extends TestCase {
 
     public function testSetClassName() {
         $className = 'className';
@@ -18,6 +18,14 @@ class DependencyTest extends PHPUnit_Framework_TestCase {
         $this->assertNull($dependency->getConstructCall());
         $this->assertNull($dependency->getConstructorArguments());
         $this->assertNull($dependency->getCalls());
+    }
+
+    public function testRemoveInterfaceShouldReturnFalse() {
+        $constructCall = new DependencyConstructCall('interface', 'method');
+
+        $dependency = new Dependency($constructCall);
+
+        $this->assertFalse($dependency->removeInterface('method'));
     }
 
     public function testSetConstructorCall() {
@@ -137,6 +145,23 @@ class DependencyTest extends PHPUnit_Framework_TestCase {
         $dependency->setInterfaces($interfaces);
 
         $this->assertEquals($interfaces, $dependency->getInterfaces());
+    }
+
+    public function testTags() {
+        $dependency = new Dependency('className');
+
+        $this->assertSame(array(), $dependency->getTags());
+        $this->assertFalse($dependency->hasTag('tag'));
+
+        $dependency->addTag('tag');
+
+        $this->assertTrue($dependency->hasTag('tag'));
+        $this->assertContains('tag', $dependency->getTags());
+
+        $this->assertTrue($dependency->removeTag('tag'));
+        $this->assertFalse($dependency->removeTag('unexistant'));
+
+        $this->assertNotContains('tag', $dependency->getTags());
     }
 
 }

@@ -4,9 +4,9 @@ namespace ride\library\dependency\argument;
 
 use ride\library\dependency\DependencyCallArgument;
 
-use \PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-class ArrayArgumentParserTest extends PHPUnit_Framework_TestCase {
+class ArrayArgumentParserTest extends TestCase {
 
     public function testGetValue() {
         $parser = new ArrayArgumentParser();

@@ -2,6 +2,7 @@
 
 namespace ride\library\dependency\argument;
 
+use ride\library\dependency\exception\DependencyException;
 use ride\library\dependency\DependencyCallArgument;
 
 /**

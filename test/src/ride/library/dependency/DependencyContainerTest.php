@@ -2,9 +2,9 @@
 
 namespace ride\library\dependency;
 
-use \PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-class DependencyContainerTest extends PHPUnit_Framework_TestCase {
+class DependencyContainerTest extends TestCase {
 
     public function testConstruct() {
         $container = new DependencyContainer();
@@ -17,6 +17,52 @@ class DependencyContainerTest extends PHPUnit_Framework_TestCase {
 
         $this->assertEquals(array(), $container->getDependencies());
         $this->assertEquals(array(), $container->getDependencies('interface'));
+    }
+
+    public function testRemoveDependency() {
+        $container = new DependencyContainer();
+        $className = 'className';
+        $for = 'foo';
+        $id = 'd0';
+        $dependency = new Dependency($className);
+        $dependency->addInterface($for);
+
+        $container->addDependency($dependency);
+
+        $this->assertTrue($container->removeDependency($for, $id));
+        $this->assertFalse($container->removeDependency('bar', 'd1'));
+    }
+
+    public function testGetDependenciesByTag() {
+        $container = new DependencyContainer();
+
+        $tagInclude = 'include';
+        $tagExclude = 'exclude';
+
+        $for = 'foo';
+        $className = 'className';
+
+        $dependency1 = new Dependency($className, 'd1');
+        $dependency1->addInterface($for);
+        $dependency1->addTag($tagInclude);
+
+        $dependency2 = new Dependency($className, 'd2');
+        $dependency2->addInterface($for);
+        $dependency2->addTag($tagExclude);
+
+        $dependency3 = new Dependency($className, 'd3');
+        $dependency3->addInterface($for);
+        $dependency3->addTag($tagInclude);
+        $dependency3->addTag($tagExclude);
+
+        $container->addDependency($dependency1);
+        $container->addDependency($dependency2);
+        $container->addDependency($dependency3);
+
+        $this->assertSame(array(), $container->getDependenciesByTag($for, 'tag'));
+        $this->assertSame(array($dependency1, $dependency3), $container->getDependenciesByTag($for, $tagInclude));
+        $this->assertSame(array($dependency1), $container->getDependenciesByTag($for, null, $tagExclude));
+        $this->assertSame(array($dependency1), $container->getDependenciesByTag($for, $tagInclude, $tagExclude));
     }
 
     public function testAddDependency() {
