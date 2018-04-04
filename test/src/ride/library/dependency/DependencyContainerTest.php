@@ -2,9 +2,9 @@
 
 namespace ride\library\dependency;
 
-use \PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-class DependencyContainerTest extends PHPUnit_Framework_TestCase {
+class DependencyContainerTest extends TestCase {
 
     public function testConstruct() {
         $container = new DependencyContainer();
@@ -17,6 +17,41 @@ class DependencyContainerTest extends PHPUnit_Framework_TestCase {
 
         $this->assertEquals(array(), $container->getDependencies());
         $this->assertEquals(array(), $container->getDependencies('interface'));
+    }
+
+    public function testRemoveDependency() {
+        $container = new DependencyContainer();
+        $className = 'className';
+        $for = 'foo';
+        $id = 'd0';
+        $dependency = new Dependency($className);
+        $dependency->addInterface($for);
+
+        $container->addDependency($dependency);
+
+        $this->assertTrue($container->removeDependency($for, $id));
+    }
+
+    public function testRemoveDependencyShouldReturnFalse() {
+        $container = new DependencyContainer();
+        $className = 'className';
+        $for = 'foo';
+        $id = 'd0';
+        $dependency = new Dependency($className);
+        $dependency->addInterface($for);
+
+        $container->addDependency($dependency);
+
+        $this->assertFalse($container->removeDependency('bar', 'd1'));    
+    }
+
+    public function testGetDependenciesByTag() {
+        $container = new DependencyContainer();
+        $className = 'className';
+        $for = 'foo';
+        $id = 'd0';
+
+        $this->assertSame(array(), $container->getDependenciesByTag($for, 'do', 'd1'));    
     }
 
     public function testAddDependency() {

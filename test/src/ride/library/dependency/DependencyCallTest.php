@@ -2,9 +2,9 @@
 
 namespace ride\library\dependency;
 
-use \PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-class DependencyCallTest extends PHPUnit_Framework_TestCase {
+class DependencyCallTest extends TestCase {
 
     public function testConstruct() {
         $methodName = 'methodName';

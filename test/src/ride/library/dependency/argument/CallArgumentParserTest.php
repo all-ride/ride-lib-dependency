@@ -7,9 +7,9 @@ use ride\library\dependency\DependencyContainer;
 use ride\library\dependency\DependencyInjector;
 use ride\library\dependency\Dependency;
 
-use \PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 
-class CallArgumentParserTest extends PHPUnit_Framework_TestCase {
+class CallArgumentParserTest extends TestCase {
 
     public function testGetValueWithFunction() {
         $dependencyInjector = new DependencyInjector();
