@@ -94,6 +94,11 @@ class DependencyInjector implements Invoker {
     protected $instances;
 
     /**
+     * @var \ride\library\reflection\ReflectionHelper
+     */
+    protected $reflectionHelper;
+
+    /**
      * Constructs a new dependency injector
      * @param \ride\library\dependency\DependencyContainer $container Container
      * with dependency definitions
