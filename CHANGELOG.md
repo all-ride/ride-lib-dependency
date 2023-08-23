@@ -1,5 +1,5 @@
 # ride-lib-dependency
-## [1.1.1] - 2023-08-23
+## [1.1.3] - 2023-08-23
 ### Updated
 - Creation of dynamic properties is deprecated in php 8+
 ## [1.1.0] - 2023-06-05
