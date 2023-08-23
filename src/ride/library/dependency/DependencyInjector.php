@@ -701,7 +701,7 @@ class DependencyInjector implements Invoker {
 
         $exception = null;
 
-        $argumentClass = $argument->getClass();
+        $argumentClass = $argument->getType();
         if ($argumentClass) {
             try {
                 return $this->get($argumentClass->getName(), null, null, false, $exclude);
