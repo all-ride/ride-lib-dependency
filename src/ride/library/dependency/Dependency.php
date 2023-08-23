@@ -45,6 +45,8 @@ class Dependency {
      */
     protected $tags;
 
+    protected $constructCall;
+
     /**
      * Constructs a new dependency
      * @param string|DependencyConstructCall $classOrCall Full class name or a
