@@ -444,6 +444,7 @@ class DependencyInjector implements Invoker {
                             try {
                                 $instance = $this->createUndefined($interface, $arguments, $exclude);
                             } catch (Exception $e) {
+                                throw $e;
                                 $exception = $e;
                             }
                         }
@@ -472,7 +473,8 @@ class DependencyInjector implements Invoker {
             try {
                 $instance = $this->create($interface, $dependency, $arguments, $exclude);
             } catch (Exception $exception) {
-                throw new DependencyException('Could not get dependency for interface ' . $interface . ' with id ' . $id . ': instance could not be created', 0, $exception);
+                throw $exception;
+                throw new DependencyException('Could not get dependency for interface ' . $interface . ' with id ' . $id . ': instance could not be created', 0, previous: $exception);
             }
         }
 
@@ -630,6 +632,7 @@ class DependencyInjector implements Invoker {
         try {
             $arguments = $this->parseArguments($arguments, $callbackArguments, $exclude, $isDynamic);
         } catch (DependencyException $exception) {
+            throw $exception;
             throw new ReflectionException('Could not invoke ' . ($isDynamic ? 'dynamic ' : '') . $callback . ': could not parse arguments', 0, $exception);
         }
 

@@ -26,17 +26,13 @@ abstract class AbstractInjectableArgumentParser implements InjectableArgumentPar
      * Instance of the dependency injector
      * @var \ride\library\dependency\DependencyInjector
      */
-    protected $di;
+    protected $dependencyInjector;
 
     /**
      * Exclusion list for the dependency injector
      * @var array
      */
     protected $exclude;
-    /**
-     * @var \ride\library\dependency\DependencyInjector
-     */
-    protected $dependencyInjector;
 
     /**
      * Sets the dependency injector to this parser
