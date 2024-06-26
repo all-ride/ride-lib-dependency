@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 class DependencyInjectorTest extends TestCase {
 
     private $di;
+    protected $test;
 
     public function setUp() {
         $this->di = new DependencyInjector();
@@ -780,7 +781,7 @@ class TestObject implements TestInterface, TestInterface2 {
         if ($token) {
             $this->setToken($token);
         } else {
-            $this->setToken(rand(10000, 99999));
+            $this->setToken(random_int(10000, 99999));
         }
     }
 
@@ -819,6 +820,8 @@ class TestObject implements TestInterface, TestInterface2 {
 }
 
 class TestObject2 {
+
+    protected $object;
 
     public function __construct(TestObject $object) {
         $this->object = $object;

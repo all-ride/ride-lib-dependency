@@ -36,7 +36,7 @@ class CallArgumentParserTest extends TestCase {
         $parser = new CallArgumentParser();
         $parser->setDependencyInjector($dependencyInjector);
 
-        $data = array('class' => __CLASS__, 'method' => 'staticMethod');
+        $data = array('class' => self::class, 'method' => 'staticMethod');
         $argument = new DependencyCallArgument('name', 'call', $data);
 
         $result = $parser->getValue($argument);
@@ -164,7 +164,7 @@ class TestObject implements TestInterface {
         if ($token) {
             $this->setToken($token);
         } else {
-            $this->setToken(rand(10000, 99999));
+            $this->setToken(random_int(10000, 99999));
         }
     }
 
